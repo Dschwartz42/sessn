@@ -165,11 +165,11 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 16,
+    borderRadius: radius.pill,
+    paddingVertical: 17,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  primaryButtonText: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  linkText: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm },
+  primaryButtonText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
+  linkText: { color: colors.textSecondary, fontFamily: 'Barlow_400Regular', textAlign: 'center', marginTop: spacing.sm },
 });

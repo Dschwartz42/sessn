@@ -88,6 +88,7 @@ function SearchNavigator() {
     <SearchStack.Navigator screenOptions={screenOptions}>
       <SearchStack.Screen name="Search" component={SearchScreen} />
       <SearchStack.Screen name="UserProfile" component={ProfileScreen} />
+      <SearchStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
     </SearchStack.Navigator>
   );
 }
@@ -117,6 +118,7 @@ function ProfileNavigator() {
       <ProfileStack.Screen name="AboutSessn" component={AboutSessnScreen} />
       <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
       <ProfileStack.Screen name="UserProfile" component={ProfileScreen} />
+      <ProfileStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -141,12 +143,12 @@ function MainTabs({ navigation }: any) {
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const icons: Record<string, { active: any; inactive: any }> = {
-    HomeTab: { active: 'home', inactive: 'home-outline' },
-    SearchTab: { active: 'search', inactive: 'search-outline' },
-    PostTab: { active: 'add-circle', inactive: 'add-circle' },
-    CommunityTab: { active: 'people', inactive: 'people-outline' },
-    ProfileTab: { active: 'person', inactive: 'person-outline' },
+  const tabConfig: Record<string, { active: any; inactive: any; label: string }> = {
+    HomeTab: { active: 'home', inactive: 'home-outline', label: 'Home' },
+    SearchTab: { active: 'search', inactive: 'search-outline', label: 'Search' },
+    PostTab: { active: 'add', inactive: 'add', label: '' },
+    CommunityTab: { active: 'people', inactive: 'people-outline', label: 'Community' },
+    ProfileTab: { active: 'person', inactive: 'person-outline', label: 'Profile' },
   };
 
   return (
@@ -154,7 +156,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       {state.routes.map((route: any, index: number) => {
         const focused = state.index === index;
         const isPost = route.name === 'PostTab';
-        const icon = icons[route.name];
+        const cfg = tabConfig[route.name];
 
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -163,13 +165,26 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           }
         };
 
+        if (isPost) {
+          return (
+            <TouchableOpacity key={route.key} style={tabStyles.tab} onPress={onPress} activeOpacity={0.8}>
+              <View style={tabStyles.postButton}>
+                <Ionicons name="add" size={28} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          );
+        }
+
         return (
           <TouchableOpacity key={route.key} style={tabStyles.tab} onPress={onPress} activeOpacity={0.8}>
             <Ionicons
-              name={focused ? icon?.active : icon?.inactive}
-              size={isPost ? 36 : 24}
-              color={isPost ? colors.primary : focused ? colors.text : colors.textDim}
+              name={focused ? cfg?.active : cfg?.inactive}
+              size={24}
+              color={focused ? colors.primaryLight : 'rgba(255,255,255,0.35)'}
             />
+            <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
+              {cfg?.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -180,16 +195,41 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 const tabStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: colors.tabBar,
+    backgroundColor: 'rgba(10,10,10,0.95)',
     borderTopWidth: 1,
-    borderTopColor: colors.tabBarBorder,
-    paddingBottom: 24,
-    paddingTop: 10,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    paddingBottom: 28,
+    paddingTop: 8,
+    alignItems: 'center',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 6,
+    gap: 4,
+  },
+  postButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  label: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.35)',
+  },
+  labelActive: {
+    color: colors.primaryLight,
   },
 });
 
@@ -208,7 +248,7 @@ export default function AppNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.primary, fontSize: 36, fontWeight: '900', letterSpacing: 8 }}>SESSN</Text>
+        <Text style={{ color: colors.text, fontFamily: 'BebasNeue_400Regular', fontSize: 48, letterSpacing: 10 }}>SESSN</Text>
       </View>
     );
   }

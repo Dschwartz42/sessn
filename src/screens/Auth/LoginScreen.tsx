@@ -4,9 +4,10 @@ import {
   SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { auth } from '../../services/firebase';
-import { colors, typography, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 import { AuthStackParamList } from '../../navigation/types';
 
 type Props = {
@@ -40,41 +41,47 @@ export default function LoginScreen({ navigation }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your Sessn account</Text>
+        <Text style={styles.subtitle}>Log in to your Sessn</Text>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textDim}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textDim}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              placeholderTextColor={colors.textDim}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textDim}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
             {loading ? (
-              <ActivityIndicator color={colors.text} />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.primaryButtonText}>Log In</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('PhoneAuth')}>
-            <Text style={styles.linkText}>Log in with phone number instead</Text>
+            <Text style={styles.linkText}>Use phone number instead</Text>
           </TouchableOpacity>
         </View>
 
@@ -92,31 +99,61 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   inner: { flex: 1, paddingHorizontal: spacing.xl },
-  back: { marginTop: spacing.md, marginBottom: spacing.lg },
-  backText: { color: colors.text, fontSize: 24 },
-  title: { ...typography.h1, marginBottom: spacing.xs },
-  subtitle: { ...typography.bodySecondary, marginBottom: spacing.xl },
+  back: { marginTop: spacing.md, marginBottom: spacing.xl },
+  title: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 40,
+    color: colors.text,
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+  },
   form: { gap: spacing.md },
+  inputWrap: { gap: 6 },
+  inputLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
   input: {
     backgroundColor: colors.inputBackground,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
     color: colors.text,
+    fontFamily: 'Barlow_400Regular',
     fontSize: 15,
     borderWidth: 1,
     borderColor: colors.border,
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 16,
+    borderRadius: radius.pill,
+    paddingVertical: 17,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  primaryButtonText: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  linkText: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 'auto', paddingBottom: spacing.xl },
-  footerText: { ...typography.body },
-  footerLink: { color: colors.primary, fontWeight: '600', fontSize: 15 },
+  primaryButtonText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
+  linkText: {
+    color: colors.textSecondary,
+    fontFamily: 'Barlow_400Regular',
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    fontSize: 14,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 'auto',
+    paddingBottom: spacing.xl,
+  },
+  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 15, color: colors.textSecondary },
+  footerLink: { color: colors.primary, fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
 });

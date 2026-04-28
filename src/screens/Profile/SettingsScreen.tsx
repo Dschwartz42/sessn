@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, spacing, radius, typography } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 
 type Props = { navigation: any };
 
@@ -76,19 +76,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerTitle: { ...typography.h3 },
+  headerTitle: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 17,
+    color: colors.text,
+  },
   section: {
     marginTop: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     marginHorizontal: spacing.md,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: 16,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     gap: spacing.md,
@@ -97,19 +103,19 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: colors.primaryDim,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowLabel: { flex: 1, color: colors.text, fontSize: 15 },
+  rowLabel: { flex: 1, color: colors.text, fontFamily: 'Barlow_500Medium', fontSize: 15 },
   logoutBtn: {
     margin: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.red + '40',
+    borderColor: 'rgba(232, 72, 85, 0.3)',
   },
-  logoutText: { color: colors.red, fontWeight: '700', fontSize: 15 },
+  logoutText: { color: colors.red, fontFamily: 'Barlow_700Bold', fontSize: 15 },
 });

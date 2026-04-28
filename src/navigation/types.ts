@@ -18,6 +18,7 @@ export type HomeStackParamList = {
 export type SearchStackParamList = {
   Search: undefined;
   UserProfile: { uid: string };
+  ExpandedPost: { postId: string };
 };
 
 export type CommunityStackParamList = {
@@ -39,6 +40,7 @@ export type ProfileStackParamList = {
   AboutSessn: undefined;
   EditProfile: undefined;
   UserProfile: { uid: string };
+  ExpandedPost: { postId: string };
 };
 
 export type MainTabParamList = {

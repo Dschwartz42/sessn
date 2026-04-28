@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, typography, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 import { AuthStackParamList } from '../../navigation/types';
 
 type Props = {
@@ -12,9 +12,9 @@ export default function WelcomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
-        <View style={styles.logo}>
+        <View style={styles.logoSection}>
           <Text style={styles.logoText}>SESSN</Text>
-          <Text style={styles.tagline}>Every workout. Your story.</Text>
+          <Text style={styles.tagline}>Every workout deserves a post.</Text>
         </View>
 
         <View style={styles.buttons}>
@@ -22,7 +22,7 @@ export default function WelcomeScreen({ navigation }: Props) {
             style={styles.primaryButton}
             onPress={() => navigation.navigate('Signup')}
           >
-            <Text style={styles.primaryButtonText}>Create Account</Text>
+            <Text style={styles.primaryButtonText}>Get Started</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -33,10 +33,10 @@ export default function WelcomeScreen({ navigation }: Props) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.phoneButton}
+            style={styles.ghostButton}
             onPress={() => navigation.navigate('PhoneAuth')}
           >
-            <Text style={styles.phoneButtonText}>Continue with Phone</Text>
+            <Text style={styles.ghostButtonText}>Continue with Phone</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -45,66 +45,64 @@ export default function WelcomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   inner: {
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
   },
-  logo: {
+  logoSection: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoText: {
-    fontSize: 56,
-    fontWeight: '900',
-    color: colors.primary,
-    letterSpacing: 8,
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 72,
+    color: colors.text,
+    letterSpacing: 12,
   },
   tagline: {
-    ...typography.bodySecondary,
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
     marginTop: spacing.sm,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  buttons: {
-    gap: spacing.md,
-  },
+  buttons: { gap: 12 },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 16,
+    borderRadius: radius.pill,
+    paddingVertical: 17,
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: colors.text,
+    color: '#fff',
+    fontFamily: 'Barlow_700Bold',
     fontSize: 16,
-    fontWeight: '700',
   },
   secondaryButton: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingVertical: 16,
+    backgroundColor: 'transparent',
+    borderRadius: radius.pill,
+    paddingVertical: 17,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderMedium,
   },
   secondaryButtonText: {
     color: colors.text,
+    fontFamily: 'Barlow_600SemiBold',
     fontSize: 16,
-    fontWeight: '600',
   },
-  phoneButton: {
-    paddingVertical: 16,
+  ghostButton: {
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  phoneButtonText: {
+  ghostButtonText: {
     color: colors.textSecondary,
+    fontFamily: 'Barlow_500Medium',
     fontSize: 15,
-    fontWeight: '500',
   },
 });

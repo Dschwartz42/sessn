@@ -13,7 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: '#0a0a0a',
   },
   ios: {
     supportsTablet: false,
@@ -26,6 +26,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
+    'expo-font',
     'expo-camera',
     'expo-image-picker',
     ['expo-location', { locationAlwaysAndWhenInUsePermission: 'Allow Sessn to use your location.' }],

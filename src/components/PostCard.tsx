@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, Image, TouchableOpacity,
-  Dimensions, Alert,
+  View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { Post } from '../types';
-import { colors, spacing, radius, typography } from '../utils/theme';
+import { colors, spacing, radius } from '../utils/theme';
 import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../services/postService';
 import ShareSheet from './ShareSheet';
 import WorkoutDetailsPanel from './WorkoutDetailsPanel';
 
 const { width } = Dimensions.get('window');
-const IMAGE_HEIGHT = width * 0.6;
 
 interface Props {
   post: Post;
@@ -24,7 +22,8 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
   const { user, userDoc } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
+  const [repostCount, setRepostCount] = useState(post.repostCount ?? 0);
   const [showDetails, setShowDetails] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
@@ -36,64 +35,33 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
 
   const handleLike = async () => {
     if (!user) return;
-    if (liked) {
-      await unlikePost(post.id, user.uid);
-      setLiked(false);
-      setLikeCount((c) => c - 1);
-    } else {
-      await likePost(post.id, user.uid);
-      setLiked(true);
-      setLikeCount((c) => c + 1);
-    }
+    if (liked) { await unlikePost(post.id, user.uid); setLiked(false); setLikeCount((c) => c - 1); }
+    else { await likePost(post.id, user.uid); setLiked(true); setLikeCount((c) => c + 1); }
   };
 
   const handleSave = async () => {
     if (!user) return;
-    if (saved) {
-      await unsavePost(post.id, user.uid);
-      setSaved(false);
-    } else {
-      await savePost(post.id, user.uid);
-      setSaved(true);
-    }
+    if (saved) { await unsavePost(post.id, user.uid); setSaved(false); }
+    else { await savePost(post.id, user.uid); setSaved(true); }
   };
 
   const handleRepost = async () => {
     if (!user || !userDoc) return;
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Repost',
-        onPress: async () => {
-          await repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl);
-        },
-      },
+      { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
     ]);
   };
 
-  const tag = post.type === 'class' ? post.classType : post.split ?? post.workoutTypes.join(' · ');
+  const splitLabel = post.type === 'class' ? post.classType : (post.split ?? post.workoutTypes?.[0] ?? 'Workout');
+  const dateStr = post.createdAt?.toDate
+    ? post.createdAt.toDate().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })
+    : '';
 
   return (
     <View style={styles.card}>
-      {/* Author row */}
-      <View style={styles.authorRow}>
-        <TouchableOpacity style={styles.authorLeft} onPress={onUserPress}>
-          {post.authorPicUrl ? (
-            <Image source={{ uri: post.authorPicUrl }} style={styles.authorAvatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={14} color={colors.textSecondary} />
-            </View>
-          )}
-          <Text style={styles.authorName}>{post.authorUsername}</Text>
-        </TouchableOpacity>
-        <View style={styles.tagBadge}>
-          <Text style={styles.tagText}>{tag}</Text>
-        </View>
-      </View>
-
-      {/* Image */}
-      <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
+      {/* Image with gradient overlay */}
+      <TouchableOpacity onPress={onPress} activeOpacity={0.97} style={styles.imageContainer}>
         {post.imageUrl ? (
           <Image source={{ uri: post.imageUrl }} style={styles.image} />
         ) : (
@@ -101,63 +69,92 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
             <Ionicons name="barbell-outline" size={48} color={colors.textDim} />
           </View>
         )}
+        {/* Gradient overlay — dark at bottom */}
+        <View style={styles.imageGradient} />
+        {/* Overlaid content at bottom of image */}
+        <View style={styles.imageOverlayContent}>
+          {post.location?.name ? (
+            <View style={styles.locationPill}>
+              <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.75)" />
+              <Text style={styles.locationText}>{post.location.name}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.workoutTitle}>{post.title?.toUpperCase()}</Text>
+        </View>
       </TouchableOpacity>
 
-      {/* Title + stats */}
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
-        <View style={styles.statsRow}>
-          <Text style={styles.stat}>{post.durationMinutes}min</Text>
-          {post.exercises && (
-            <Text style={styles.stat}> · {post.exercises.length} exercises</Text>
-          )}
-          {post.type === 'class' && post.classDetails?.rating != null && (
-            <Text style={styles.stat}> · {'★'.repeat(post.classDetails.rating)}</Text>
-          )}
-        </View>
+      {/* Username + date row */}
+      <View style={styles.usernameRow}>
+        <TouchableOpacity onPress={onUserPress}>
+          <Text style={styles.username}>{post.authorUsername}</Text>
+        </TouchableOpacity>
+        <Text style={styles.dateText}>{dateStr}</Text>
       </View>
 
-      {/* Actions */}
+      {/* Stats row */}
+      <View style={styles.statsRow}>
+        {splitLabel ? (
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Split</Text>
+            <Text style={styles.statValue}>{splitLabel.toUpperCase()}</Text>
+          </View>
+        ) : null}
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Time</Text>
+          <Text style={styles.statValue}>{post.durationMinutes} MIN</Text>
+        </View>
+        {post.exercises && post.exercises.length > 0 ? (
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Exercises</Text>
+            <Text style={styles.statValue}>{post.exercises.length}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Action buttons */}
       <View style={styles.actions}>
         <TouchableOpacity style={styles.action} onPress={handleLike}>
-          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={22} color={liked ? colors.red : colors.textSecondary} />
-          <Text style={styles.actionCount}>{likeCount}</Text>
+          <Ionicons
+            name={liked ? 'heart' : 'heart-outline'}
+            size={20}
+            color={liked ? '#FF4D6A' : 'rgba(255,255,255,0.45)'}
+          />
+          {likeCount > 0 && <Text style={[styles.actionCount, liked && styles.actionCountLiked]}>{likeCount}</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.action} onPress={handleRepost}>
-          <Ionicons name="repeat" size={22} color={colors.textSecondary} />
-          <Text style={styles.actionCount}>{post.repostCount}</Text>
+          <Ionicons name="repeat" size={20} color="rgba(255,255,255,0.45)" />
+          {repostCount > 0 && <Text style={styles.actionCount}>{repostCount}</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.action} onPress={() => setShowShare(true)}>
-          <Ionicons name="share-outline" size={22} color={colors.textSecondary} />
+          <Ionicons name="send-outline" size={19} color="rgba(255,255,255,0.45)" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.action} onPress={handleSave}>
-          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={22} color={saved ? colors.primary : colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.action, styles.detailsBtn]} onPress={() => setShowDetails(true)}>
-          <Text style={styles.detailsBtnText}>Workout Details</Text>
+        <TouchableOpacity style={[styles.action, styles.saveAction]} onPress={handleSave}>
+          <Ionicons
+            name={saved ? 'bookmark' : 'bookmark-outline'}
+            size={20}
+            color={saved ? colors.primaryLight : 'rgba(255,255,255,0.45)'}
+          />
         </TouchableOpacity>
       </View>
 
-      {showDetails && (
-        <WorkoutDetailsPanel
-          post={post}
-          saved={saved}
-          onSave={handleSave}
-          onClose={() => setShowDetails(false)}
-        />
-      )}
+      {/* Caption */}
+      {post.caption ? (
+        <Text style={styles.caption} numberOfLines={2}>{post.caption}</Text>
+      ) : null}
 
+      {/* Tap for details */}
+      <TouchableOpacity style={styles.tapHint} onPress={() => setShowDetails(true)}>
+        <Text style={styles.tapHintText}>Tap to see workout details ›</Text>
+      </TouchableOpacity>
+
+      {showDetails && (
+        <WorkoutDetailsPanel post={post} saved={saved} onSave={handleSave} onClose={() => setShowDetails(false)} />
+      )}
       {showShare && (
-        <ShareSheet
-          type="post"
-          postId={post.id}
-          imageUrl={post.imageUrl}
-          onClose={() => setShowShare(false)}
-        />
+        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} onClose={() => setShowShare(false)} />
       )}
     </View>
   );
@@ -165,65 +162,117 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.cardBackground,
-    marginBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  authorLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  authorAvatar: { width: 32, height: 32, borderRadius: 16 },
-  avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  authorName: { color: colors.text, fontWeight: '600', fontSize: 14 },
-  tagBadge: {
-    backgroundColor: colors.primaryDim,
-    borderRadius: radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: '#151515',
     borderWidth: 1,
-    borderColor: colors.primary + '40',
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
-  tagText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-  image: { width: '100%', height: IMAGE_HEIGHT, resizeMode: 'cover' },
+  imageContainer: { position: 'relative', height: 300, width: '100%' },
+  image: { width: '100%', height: '100%', resizeMode: 'cover' },
   imagePlaceholder: {
     backgroundColor: colors.surfaceElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  info: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
-  title: { ...typography.h3, marginBottom: 2 },
-  statsRow: { flexDirection: 'row' },
-  stat: { ...typography.caption, color: colors.textSecondary },
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: '65%',
+    // RN can't do CSS gradients — simulate with semi-transparent overlay
+    backgroundColor: 'rgba(0,0,0,0)',
+  },
+  imageOverlayContent: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    padding: 16,
+    // dark overlay fade
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  locationText: { color: 'rgba(255,255,255,0.75)', fontFamily: 'Barlow_500Medium', fontSize: 11 },
+  workoutTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    letterSpacing: 1.5,
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 0,
+  },
+  username: { fontFamily: 'Barlow_600SemiBold', fontSize: 13, color: 'rgba(255,255,255,0.7)' },
+  dateText: { fontFamily: 'Barlow_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.35)' },
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    gap: 24,
+  },
+  statItem: {},
+  statLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.35)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  statValue: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 20,
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    gap: 20,
   },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionCount: { color: colors.textSecondary, fontSize: 13 },
-  detailsBtn: {
-    marginLeft: 'auto',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
+  action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  actionCount: { fontFamily: 'Barlow_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.45)' },
+  actionCountLiked: { color: '#FF4D6A' },
+  saveAction: { marginLeft: 'auto' },
+  caption: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.55)',
+    lineHeight: 19,
   },
-  detailsBtnText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  tapHint: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  tapHintText: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    color: colors.primaryLight,
+  },
 });

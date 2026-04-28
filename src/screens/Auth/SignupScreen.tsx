@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, query, collection, where, getDocs } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { auth, db } from '../../services/firebase';
-import { colors, typography, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 import { AuthStackParamList } from '../../navigation/types';
 
 type Props = {
@@ -43,16 +44,16 @@ export default function SignupScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
-      // Check username uniqueness
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
       const usernameQuery = query(collection(db, 'users'), where('username', '==', usernameClean));
       const usernameSnap = await getDocs(usernameQuery);
       if (!usernameSnap.empty) {
+        await cred.user.delete();
         Alert.alert('Error', 'That username is already taken.');
         setLoading(false);
         return;
       }
-
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await setDoc(doc(db, 'users', cred.user.uid), {
         uid: cred.user.uid,
         displayName: displayName.trim(),
@@ -101,57 +102,38 @@ export default function SignupScreen({ navigation }: Props) {
       >
         <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
           <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>←</Text>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join the Sessn community</Text>
 
           <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full name"
-              placeholderTextColor={colors.textDim}
-              value={displayName}
-              onChangeText={setDisplayName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              placeholderTextColor={colors.textDim}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={colors.textDim}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.textDim}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm password"
-              placeholderTextColor={colors.textDim}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
+            {[
+              { label: 'Full Name', value: displayName, setter: setDisplayName, placeholder: 'Your name', caps: 'words' as const },
+              { label: 'Username', value: username, setter: setUsername, placeholder: '@username', caps: 'none' as const },
+              { label: 'Email', value: email, setter: setEmail, placeholder: 'you@example.com', caps: 'none' as const, keyboard: 'email-address' as const },
+              { label: 'Password', value: password, setter: setPassword, placeholder: '••••••••', secure: true },
+              { label: 'Confirm Password', value: confirmPassword, setter: setConfirmPassword, placeholder: '••••••••', secure: true },
+            ].map((field) => (
+              <View key={field.label} style={styles.inputWrap}>
+                <Text style={styles.inputLabel}>{field.label}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={field.placeholder}
+                  placeholderTextColor={colors.textDim}
+                  value={field.value}
+                  onChangeText={field.setter}
+                  autoCapitalize={field.caps ?? 'sentences'}
+                  keyboardType={field.keyboard ?? 'default'}
+                  secureTextEntry={field.secure}
+                />
+              </View>
+            ))}
 
             <TouchableOpacity style={styles.primaryButton} onPress={handleSignup} disabled={loading}>
               {loading ? (
-                <ActivityIndicator color={colors.text} />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.primaryButtonText}>Create Account</Text>
               )}
@@ -174,30 +156,49 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   inner: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
-  back: { marginTop: spacing.md, marginBottom: spacing.lg },
-  backText: { color: colors.text, fontSize: 24 },
-  title: { ...typography.h1, marginBottom: spacing.xs },
-  subtitle: { ...typography.bodySecondary, marginBottom: spacing.xl },
+  back: { marginTop: spacing.md, marginBottom: spacing.xl },
+  title: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 40,
+    color: colors.text,
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+  },
   form: { gap: spacing.md },
+  inputWrap: { gap: 6 },
+  inputLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
   input: {
     backgroundColor: colors.inputBackground,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
     color: colors.text,
+    fontFamily: 'Barlow_400Regular',
     fontSize: 15,
     borderWidth: 1,
     borderColor: colors.border,
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 16,
+    borderRadius: radius.pill,
+    paddingVertical: 17,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  primaryButtonText: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  primaryButtonText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
-  footerText: { ...typography.body },
-  footerLink: { color: colors.primary, fontWeight: '600', fontSize: 15 },
+  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 15, color: colors.textSecondary },
+  footerLink: { color: colors.primary, fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
 });
