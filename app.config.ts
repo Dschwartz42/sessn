@@ -17,7 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.sessn.app',
+    bundleIdentifier: 'com.danielschwartzman.sessn',
     infoPlist: {
       NSCameraUsageDescription: 'Sessn uses your camera to add photos to workouts.',
       NSPhotoLibraryUsageDescription: 'Sessn uses your photo library to add images to workouts.',
