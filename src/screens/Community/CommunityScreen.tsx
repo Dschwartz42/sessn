@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, Image, ActivityIndicator,
+  SafeAreaView, Image, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -74,18 +74,21 @@ export default function CommunityScreen({ navigation }: Props) {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const g = await getUserGroups(user.uid);
-      setGroups(g);
-      const ids = await getFollowingIds(user.uid);
-      if (ids.length > 0) {
-        const snap = await getDocs(
-          query(collection(db, 'users'), where('uid', 'in', ids.slice(0, 30)))
-        );
-        const friends = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc));
-        friends.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
-        setFriendStreaks(friends);
+      try {
+        const g = await getUserGroups(user.uid);
+        setGroups(g);
+        const ids = await getFollowingIds(user.uid);
+        if (ids.length > 0) {
+          const snap = await getDocs(
+            query(collection(db, 'users'), where('uid', 'in', ids.slice(0, 30)))
+          );
+          const friends = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc));
+          friends.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
+          setFriendStreaks(friends);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     load();
   }, [user]);
@@ -140,14 +143,14 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.createBtn}
-              onPress={() => navigation.navigate('CreateGroup')}
+              onPress={() => Alert.alert('Coming Soon', 'Group creation is coming in the next update.')}
             >
               <Ionicons name="add" size={18} color="#fff" />
               <Text style={styles.createBtnText}>Create Group</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.joinBtn}
-              onPress={() => navigation.navigate('JoinGroup')}
+              onPress={() => Alert.alert('Coming Soon', 'Joining groups is coming in the next update.')}
             >
               <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
               <Text style={styles.joinBtnText}>Join Group</Text>
