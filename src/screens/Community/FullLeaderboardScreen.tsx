@@ -4,35 +4,55 @@ import {
   Image, SafeAreaView, ActivityIndicator, Alert, Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Group, GroupMember } from '../../types';
+import { Group, GroupMember, UserDoc } from '../../types';
 import { colors, spacing, radius, typography } from '../../utils/theme';
 import { getGroupMembers, leaveGroup } from '../../services/groupService';
+import { getFollowingIds } from '../../services/followService';
 
 type Metric = 'sessns' | 'lbs' | 'hrs';
 type Props = { navigation: any; route: any };
 
 export default function FullLeaderboardScreen({ navigation, route }: Props) {
-  const { groupId } = route.params;
+  const { groupId, type } = route.params;
+  const isStreaksMode = type === 'streaks';
   const { user } = useAuth();
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [friendStreaks, setFriendStreaks] = useState<UserDoc[]>([]);
   const [metric, setMetric] = useState<Metric>('sessns');
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'groups', groupId));
-      if (snap.exists()) setGroup({ id: snap.id, ...snap.data() } as Group);
-      const m = await getGroupMembers(groupId);
-      setMembers(m);
-      setLoading(false);
+      try {
+        if (isStreaksMode) {
+          if (!user) return;
+          const ids = await getFollowingIds(user.uid);
+          if (ids.length > 0) {
+            const snap = await getDocs(
+              query(collection(db, 'users'), where('uid', 'in', ids.slice(0, 30)))
+            );
+            const friends = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc));
+            friends.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
+            setFriendStreaks(friends);
+          }
+        } else {
+          const snap = await getDoc(doc(db, 'groups', groupId));
+          if (snap.exists()) setGroup({ id: snap.id, ...snap.data() } as Group);
+          const m = await getGroupMembers(groupId);
+          setMembers(m);
+        }
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [groupId]);
+  }, [groupId, isStreaksMode]);
 
   const sorted = [...members].sort((a, b) => {
     if (metric === 'sessns') return (b.totalSessns ?? 0) - (a.totalSessns ?? 0);
@@ -80,6 +100,43 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
     { key: 'lbs', label: 'LBS' },
     { key: 'hrs', label: 'HRS' },
   ];
+
+  if (isStreaksMode) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.groupInfo}>
+            <View style={[styles.groupPic, styles.picPlaceholder]}>
+              <Text style={{ fontSize: 18 }}>🔥</Text>
+            </View>
+            <View>
+              <Text style={styles.groupName}>Friend Streaks</Text>
+              <Text style={styles.memberCount}>{friendStreaks.length} friends</Text>
+            </View>
+          </View>
+        </View>
+        <FlatList
+          data={friendStreaks}
+          keyExtractor={(item) => item.uid}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              style={[styles.row, item.uid === user?.uid && styles.highlighted]}
+              onPress={() => navigation.navigate('UserProfile', { uid: item.uid })}
+            >
+              <Text style={styles.rank}>#{index + 1}</Text>
+              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.value}>{item.currentStreak ?? 0} WEEKS</Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

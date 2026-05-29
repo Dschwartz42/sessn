@@ -47,29 +47,33 @@ export default function ProfileScreen({ navigation, route }: Props) {
   useEffect(() => {
     if (!targetUid) return;
     const loadPosts = async () => {
-      let q;
-      if (tab === 'posts' || tab === 'reposts') {
-        q = query(collection(db, 'posts'), where('authorId', '==', targetUid));
-      } else if (tab === 'saved') {
-        const savedSnap = await getDocs(collection(db, 'users', targetUid, 'savedPosts'));
-        const ids = savedSnap.docs.map((d) => d.data().postId as string);
-        if (ids.length === 0) { setPosts([]); return; }
-        const fetched: Post[] = [];
-        for (const id of ids.slice(0, 20)) {
-          const snap = await getDoc(doc(db, 'posts', id));
-          if (snap.exists()) fetched.push({ id: snap.id, ...snap.data() } as Post);
+      try {
+        if (tab === 'groups') {
+          setPosts([]);
+          return;
         }
-        setPosts(fetched);
-        return;
+        if (tab === 'saved') {
+          const savedSnap = await getDocs(collection(db, 'users', targetUid, 'savedPosts'));
+          const ids = savedSnap.docs.map((d) => d.data().postId as string);
+          if (ids.length === 0) { setPosts([]); return; }
+          const fetched: Post[] = [];
+          for (const id of ids.slice(0, 20)) {
+            const snap = await getDoc(doc(db, 'posts', id));
+            if (snap.exists()) fetched.push({ id: snap.id, ...snap.data() } as Post);
+          }
+          setPosts(fetched);
+          return;
+        }
+        const q = query(collection(db, 'posts'), where('authorId', '==', targetUid));
+        const snap = await getDocs(q);
+        const all = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() } as Post))
+          .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+        if (tab === 'reposts') setPosts(all.filter((p) => p.isRepost));
+        else setPosts(all.filter((p) => !p.isRepost));
+      } catch {
+        setPosts([]);
       }
-      if (!q) return;
-      const snap = await getDocs(q);
-      const all = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() } as Post))
-        .sort((a, b) => b.createdAt?.toMillis?.() - a.createdAt?.toMillis?.());
-      if (tab === 'posts') setPosts(all.filter((p) => !p.isRepost));
-      else if (tab === 'reposts') setPosts(all.filter((p) => p.isRepost));
-      else setPosts(all);
     };
     loadPosts();
   }, [tab, targetUid]);

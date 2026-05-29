@@ -98,6 +98,8 @@ function CommunityNavigator() {
     <CommunityStack.Navigator screenOptions={screenOptions}>
       <CommunityStack.Screen name="Community" component={CommunityScreen} />
       <CommunityStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
+      <CommunityStack.Screen name="UserProfile" component={ProfileScreen} />
+      <CommunityStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
     </CommunityStack.Navigator>
   );
 }

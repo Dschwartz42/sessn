@@ -23,7 +23,9 @@ export type SearchStackParamList = {
 
 export type CommunityStackParamList = {
   Community: undefined;
-  FullLeaderboard: { groupId: string };
+  FullLeaderboard: { groupId?: string; type?: string };
+  UserProfile: { uid: string };
+  ExpandedPost: { postId: string };
 };
 
 export type ProfileStackParamList = {

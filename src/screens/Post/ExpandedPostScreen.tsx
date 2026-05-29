@@ -77,7 +77,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     ]);
   };
 
-  const tag = post.type === 'class' ? post.classType : post.split ?? post.workoutTypes.join(' · ');
+  const tag = post.type === 'class' ? post.classType : post.split ?? post.workoutTypes?.join(' · ') ?? '';
 
   return (
     <View style={styles.container}>

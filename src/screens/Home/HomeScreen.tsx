@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import {
   collection, query, where, orderBy, limit,
-  getDocs, startAfter, DocumentSnapshot,
+  getDocs, startAfter, DocumentSnapshot, onSnapshot,
 } from 'firebase/firestore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { db } from '../../services/firebase';
@@ -34,13 +34,30 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!user) return;
+    const unsub = onSnapshot(
+      query(
+        collection(db, 'notifications', user.uid, 'items'),
+        where('read', '==', false),
+        limit(1)
+      ),
+      (snap) => setHasUnread(!snap.empty)
+    );
+    return unsub;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
     const loadFollowing = async () => {
-      const snap = await getDocs(
-        query(collection(db, 'follows'), where('followerId', '==', user.uid))
-      );
-      const ids = snap.docs.map((d) => d.data().followeeId as string);
-      setFollowingIds(ids);
-      if (ids.length === 0) { setPosts([]); setLoading(false); }
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'follows'), where('followerId', '==', user.uid))
+        );
+        const ids = snap.docs.map((d) => d.data().followeeId as string);
+        setFollowingIds(ids);
+        if (ids.length === 0) { setPosts([]); setLoading(false); }
+      } catch {
+        setLoading(false);
+      }
     };
     loadFollowing();
   }, [user]);
@@ -118,9 +135,9 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Streak Banner */}
       <TouchableOpacity style={styles.streakBanner} onPress={() => navigation.navigate('Streak')} activeOpacity={0.8}>
-        <View style={styles.streakLeft}>
+        <View style={styles.streakTop}>
           <Text style={styles.streakFire}>🔥</Text>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.streakNum}>{streak} WEEK STREAK</Text>
             <Text style={styles.streakSub}>Keep it going!</Text>
           </View>
@@ -254,11 +271,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     paddingHorizontal: 18,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 10,
   },
-  streakLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  streakTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   streakFire: { fontSize: 28 },
   streakNum: {
     fontFamily: 'BebasNeue_400Regular',
@@ -267,7 +283,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   streakSub: { fontFamily: 'Barlow_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
-  streakDots: { flexDirection: 'row', gap: 5 },
+  streakDots: { flexDirection: 'row', justifyContent: 'space-between' },
   streakDot: {
     width: 28, height: 28, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',

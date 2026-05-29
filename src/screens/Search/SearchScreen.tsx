@@ -26,17 +26,22 @@ export default function SearchScreen({ navigation }: Props) {
   const [popularUsers, setPopularUsers] = useState<UserDoc[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   const loadPopular = useCallback(async () => {
-    const postsSnap = await getDocs(
-      query(collection(db, 'posts'), orderBy('likeCount', 'desc'), limit(5))
-    );
-    setPopularPosts(postsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Post)));
+    try {
+      const postsSnap = await getDocs(
+        query(collection(db, 'posts'), orderBy('likeCount', 'desc'), limit(5))
+      );
+      setPopularPosts(postsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Post)));
 
-    const usersSnap = await getDocs(
-      query(collection(db, 'users'), orderBy('followersCount', 'desc'), limit(5))
-    );
-    setPopularUsers(usersSnap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
+      const usersSnap = await getDocs(
+        query(collection(db, 'users'), orderBy('followersCount', 'desc'), limit(5))
+      );
+      setPopularUsers(usersSnap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
+    } catch {
+      // Popular content is non-critical; fail silently
+    }
   }, []);
 
   React.useEffect(() => { loadPopular(); }, []);
@@ -46,22 +51,30 @@ export default function SearchScreen({ navigation }: Props) {
     if (text.trim().length < 2) {
       setResults([]);
       setSearched(false);
+      setSearchError(false);
       return;
     }
     setLoading(true);
-    const lower = text.trim().toLowerCase();
-    const snap = await getDocs(
-      query(
-        collection(db, 'users'),
-        orderBy('username'),
-        startAt(lower),
-        endAt(lower + '\uf8ff'),
-        limit(10)
-      )
-    );
-    setResults(snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
-    setLoading(false);
-    setSearched(true);
+    setSearchError(false);
+    try {
+      const lower = text.trim().toLowerCase();
+      const snap = await getDocs(
+        query(
+          collection(db, 'users'),
+          orderBy('username'),
+          startAt(lower),
+          endAt(lower + '\uf8ff'),
+          limit(10)
+        )
+      );
+      setResults(snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
+    } catch {
+      setSearchError(true);
+      setResults([]);
+    } finally {
+      setLoading(false);
+      setSearched(true);
+    }
   };
 
   const filters: { key: Filter; label: string }[] = [
@@ -110,7 +123,20 @@ export default function SearchScreen({ navigation }: Props) {
 
       {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} />}
 
-      {searched && results.length > 0 && (
+      {searched && searchError && (
+        <View style={styles.errorWrap}>
+          <Ionicons name="warning-outline" size={24} color={colors.textDim} />
+          <Text style={styles.errorText}>Search unavailable. Check your connection and try again.</Text>
+        </View>
+      )}
+
+      {searched && !searchError && results.length === 0 && (
+        <View style={styles.errorWrap}>
+          <Text style={styles.errorText}>No athletes found for "{searchText}".</Text>
+        </View>
+      )}
+
+      {searched && !searchError && results.length > 0 && (
         <FlatList
           data={results}
           keyExtractor={(item) => item.uid}
@@ -274,4 +300,6 @@ const styles = StyleSheet.create({
   },
   followingBtn: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder },
   followBtnText: { color: '#fff', fontFamily: 'Barlow_600SemiBold', fontSize: 13 },
+  errorWrap: { alignItems: 'center', paddingTop: 32, paddingHorizontal: spacing.lg, gap: 8 },
+  errorText: { color: colors.textSecondary, fontFamily: 'Barlow_400Regular', fontSize: 14, textAlign: 'center' },
 });
