@@ -63,29 +63,32 @@ export default function HomeScreen({ navigation }: Props) {
   }, [user]);
 
   const loadPosts = useCallback(async (refresh = false) => {
-    if (!user || followingIds.length === 0) return;
-    const chunk = followingIds.slice(0, 30);
-    let q = query(
-      collection(db, 'posts'),
-      where('authorId', 'in', chunk),
-      orderBy('createdAt', 'desc'),
-      limit(PAGE_SIZE)
-    );
-    if (!refresh && lastDoc.current) {
-      q = query(
+    if (!user || followingIds.length === 0) { setLoading(false); return; }
+    try {
+      const chunk = followingIds.slice(0, 30);
+      let q = query(
         collection(db, 'posts'),
         where('authorId', 'in', chunk),
         orderBy('createdAt', 'desc'),
-        startAfter(lastDoc.current),
         limit(PAGE_SIZE)
       );
+      if (!refresh && lastDoc.current) {
+        q = query(
+          collection(db, 'posts'),
+          where('authorId', 'in', chunk),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastDoc.current),
+          limit(PAGE_SIZE)
+        );
+      }
+      const snap = await getDocs(q);
+      const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
+      lastDoc.current = snap.docs[snap.docs.length - 1] ?? null;
+      if (refresh) setPosts(fetched);
+      else setPosts((prev) => [...prev, ...fetched]);
+    } finally {
+      setLoading(false);
     }
-    const snap = await getDocs(q);
-    const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
-    lastDoc.current = snap.docs[snap.docs.length - 1] ?? null;
-    if (refresh) setPosts(fetched);
-    else setPosts((prev) => [...prev, ...fetched]);
-    setLoading(false);
   }, [user, followingIds]);
 
   useEffect(() => {
