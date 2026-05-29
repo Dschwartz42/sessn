@@ -4,6 +4,7 @@ import {
   FlatList, SafeAreaView, ScrollView, Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   collection, query, where, getDocs, doc, getDoc,
 } from 'firebase/firestore';
@@ -15,7 +16,8 @@ import { followUser, unfollowUser, isFollowing } from '../../services/followServ
 import ShareSheet from '../../components/ShareSheet';
 
 const { width } = Dimensions.get('window');
-const THUMB = (width - spacing.md * 2 - spacing.sm * 2) / 3;
+const GAP = 2;
+const THUMB = (width - GAP * 2) / 3;
 
 type OwnTab = 'posts' | 'reposts' | 'saved';
 type OtherTab = 'posts' | 'groups' | 'reposts';
@@ -103,21 +105,23 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Header bar */}
-        {!isOwn && (
+        {isOwn ? (
           <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Ionicons name="chevron-back" size={22} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-        )}
-        {isOwn && (
-          <View style={styles.topBar}>
+            <View style={{ width: 40 }} />
             <Text style={styles.logoText}>SESSN</Text>
             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings')}>
-              <Ionicons name="settings-outline" size={22} color={colors.text} />
+              <Ionicons name="settings-outline" size={20} color={colors.text} />
             </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{profileDoc?.username ?? ''}</Text>
+            <View style={{ width: 40 }} />
           </View>
         )}
 
@@ -133,58 +137,58 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
           <Text style={styles.username}>@{profileDoc?.username}</Text>
           <Text style={styles.displayName}>{profileDoc?.displayName}</Text>
-          {profileDoc?.bio ? <Text style={styles.bio}>{profileDoc.bio}</Text> : null}
+          {profileDoc?.bio ? (
+            <Text style={styles.bio}>{profileDoc.bio}</Text>
+          ) : null}
 
           {!isOwn && profileDoc?.showStreakToOthers && (
             <View style={styles.streakBadge}>
               <Text style={styles.streakText}>🔥 {profileDoc?.currentStreak ?? 0} week streak</Text>
             </View>
           )}
+        </View>
 
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNum}>{profileDoc?.postCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Posts</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNum}>{profileDoc?.followersCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNum}>{profileDoc?.followingCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
+        {/* Action buttons */}
+        <View style={styles.actionRow}>
+          {isOwn ? (
+            <>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate('EditProfile')}>
+                <Text style={styles.primaryBtnText}>Edit Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={() => setShowShare(true)}>
+                <Text style={styles.secondaryBtnText}>Share</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[styles.primaryBtn, following && styles.followingBtn]}
+                onPress={handleFollow}
+              >
+                <Text style={[styles.primaryBtnText, following && styles.followingBtnText]}>
+                  {following ? 'Following' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={() => setShowShare(true)}>
+                <Text style={styles.secondaryBtnText}>Share</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>{profileDoc?.postCount ?? 0}</Text>
+            <Text style={styles.statLabel}>POSTS</Text>
           </View>
-
-          {/* Action buttons */}
-          <View style={styles.actionRow}>
-            {isOwn ? (
-              <>
-                <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
-                  <Text style={styles.editBtnText}>Edit Profile</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.shareBtn} onPress={() => setShowShare(true)}>
-                  <Ionicons name="share-outline" size={18} color={colors.text} />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={[styles.followBtn, following && styles.followingBtn]}
-                  onPress={handleFollow}
-                >
-                  <Text style={[styles.followBtnText, following && styles.followingBtnText]}>
-                    {following ? 'Following' : 'Follow'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.shareBtn} onPress={() => setShowShare(true)}>
-                  <Ionicons name="share-outline" size={18} color={colors.text} />
-                </TouchableOpacity>
-              </>
-            )}
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>{profileDoc?.followersCount ?? 0}</Text>
+            <Text style={styles.statLabel}>FOLLOWERS</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>{profileDoc?.followingCount ?? 0}</Text>
+            <Text style={styles.statLabel}>FOLLOWING</Text>
           </View>
         </View>
 
@@ -193,20 +197,24 @@ export default function ProfileScreen({ navigation, route }: Props) {
           {tabs.map((t) => (
             <TouchableOpacity
               key={t.key}
-              style={[styles.tabItem, tab === t.key && styles.tabItemActive]}
+              style={styles.tabItem}
               onPress={() => setTab(t.key as any)}
             >
               <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
+              {tab === t.key && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Grid */}
         <View style={styles.grid}>
-          {posts.map((p) => (
+          {posts.map((p, idx) => (
             <TouchableOpacity
               key={p.id}
-              style={styles.thumb}
+              style={[
+                styles.thumb,
+                idx % 3 === 1 && { marginHorizontal: GAP },
+              ]}
               onPress={() => navigation.navigate('ExpandedPost', { postId: p.id })}
             >
               {p.imageUrl ? (
@@ -216,9 +224,18 @@ export default function ProfileScreen({ navigation, route }: Props) {
                   <Ionicons name="barbell-outline" size={22} color={colors.textDim} />
                 </View>
               )}
-              <View style={styles.thumbOverlay}>
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.thumbOverlay}
+              >
                 <Text style={styles.thumbTitle} numberOfLines={1}>{p.title}</Text>
-              </View>
+                {p.likeCount != null && (
+                  <View style={styles.thumbLikes}>
+                    <Ionicons name="heart" size={10} color="#fff" />
+                    <Text style={styles.thumbLikeCount}>{p.likeCount}</Text>
+                  </View>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           ))}
         </View>
@@ -239,61 +256,70 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   logoText: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 42,
+    color: colors.primaryLight,
+    letterSpacing: 4,
+  },
+  headerTitle: {
     fontFamily: 'BebasNeue_400Regular',
     fontSize: 22,
     color: colors.text,
-    letterSpacing: 4,
+    letterSpacing: 2,
   },
-  profileSection: { alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm, paddingBottom: spacing.md },
-  profilePic: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: colors.border },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileSection: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    gap: 6,
+  },
+  profilePic: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    borderColor: 'rgba(99,91,255,0.25)',
+    shadowColor: 'rgba(99,91,255,0.35)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 12,
+    shadowOpacity: 1,
+  },
   picPlaceholder: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: '#151515',
     alignItems: 'center',
     justifyContent: 'center',
   },
   username: {
     color: colors.text,
     fontFamily: 'Barlow_700Bold',
-    fontSize: 18,
-    marginTop: 4,
+    fontSize: 20,
+    marginTop: 14,
   },
   displayName: {
-    color: colors.textSecondary,
-    fontFamily: 'Barlow_400Regular',
-    fontSize: 15,
+    color: 'rgba(255,255,255,0.5)',
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 14,
   },
   bio: {
-    color: colors.text,
+    color: 'rgba(255,255,255,0.55)',
     fontFamily: 'Barlow_400Regular',
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
+    maxWidth: 300,
     paddingHorizontal: spacing.md,
   },
   streakBadge: {
@@ -303,98 +329,138 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: colors.fireBorder,
+    marginTop: 4,
   },
   streakText: { color: colors.fire, fontFamily: 'Barlow_700Bold', fontSize: 13 },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    width: '100%',
+  },
+  primaryBtn: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 13,
+  },
+  followingBtn: {
+    backgroundColor: 'rgba(99,91,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.25)',
+  },
+  followingBtnText: { color: colors.primaryLight },
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  secondaryBtnText: {
+    color: colors.text,
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 13,
+  },
   statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    width: '100%',
     justifyContent: 'center',
-    gap: spacing.xl,
+    paddingHorizontal: 20,
+    paddingTop: 22,
   },
-  statItem: { alignItems: 'center' },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
   statNum: {
     color: colors.text,
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 28,
+    fontSize: 24,
     letterSpacing: 1,
   },
   statLabel: {
-    color: colors.textSecondary,
-    fontFamily: 'Barlow_400Regular',
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.border,
-  },
-  actionRow: { flexDirection: 'row', gap: spacing.sm, width: '100%' },
-  editBtn: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    paddingVertical: 11,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderMedium,
-  },
-  editBtnText: { color: colors.text, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
-  followBtn: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  followingBtn: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
-  followBtnText: { color: '#fff', fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
-  followingBtnText: { color: colors.primaryLight },
-  shareBtn: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderMedium,
   },
   tabBar: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginHorizontal: 16,
+    marginTop: 20,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: spacing.sm,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  tabItem: { flex: 1, paddingVertical: 13, alignItems: 'center' },
-  tabItemActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    position: 'relative',
+  },
   tabText: {
-    color: colors.textSecondary,
-    fontFamily: 'Barlow_600SemiBold',
+    fontFamily: 'Barlow_700Bold',
     fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.35)',
   },
-  tabTextActive: { color: colors.text },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md, gap: spacing.sm },
-  thumb: { width: THUMB, height: THUMB, borderRadius: radius.xs, overflow: 'hidden' },
+  tabTextActive: {
+    color: colors.primaryLight,
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: '20%',
+    right: '20%',
+    height: 2,
+    backgroundColor: colors.primary,
+    borderRadius: 1,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  thumb: {
+    width: THUMB,
+    height: THUMB,
+    overflow: 'hidden',
+    marginBottom: GAP,
+  },
   thumbImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  thumbPlaceholder: { backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  thumbPlaceholder: { backgroundColor: '#151515', alignItems: 'center', justifyContent: 'center' },
   thumbOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    padding: 5,
+    padding: 6,
+    paddingTop: 12,
   },
-  thumbTitle: { color: '#fff', fontFamily: 'Barlow_600SemiBold', fontSize: 10 },
+  thumbTitle: {
+    color: '#fff',
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  thumbLikes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  thumbLikeCount: {
+    color: '#fff',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 10,
+  },
 });

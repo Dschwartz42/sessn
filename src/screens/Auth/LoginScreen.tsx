@@ -40,16 +40,21 @@ export default function LoginScreen({ navigation }: Props) {
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Back button */}
         <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your Sessn</Text>
+        {/* Logo */}
+        <Text style={styles.logo}>SESSN</Text>
+
+        {/* Heading */}
+        <Text style={styles.title}>WELCOME BACK</Text>
 
         <View style={styles.form}>
+          {/* Email field */}
           <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>Email</Text>
+            <Text style={styles.inputLabel}>EMAIL</Text>
             <TextInput
               style={styles.input}
               placeholder="you@example.com"
@@ -60,8 +65,15 @@ export default function LoginScreen({ navigation }: Props) {
               keyboardType="email-address"
             />
           </View>
+
+          {/* Password field */}
           <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>Password</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.inputLabel}>PASSWORD</Text>
+              <TouchableOpacity>
+                <Text style={styles.forgotLink}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="••••••••"
@@ -72,16 +84,28 @@ export default function LoginScreen({ navigation }: Props) {
             />
           </View>
 
+          {/* Login button */}
           <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Log In</Text>
+              <Text style={styles.primaryButtonText}>LOG IN</Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('PhoneAuth')}>
-            <Text style={styles.linkText}>Use phone number instead</Text>
+          {/* Separator */}
+          <View style={styles.separator}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>or</Text>
+            <View style={styles.separatorLine} />
+          </View>
+
+          {/* Phone button */}
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('PhoneAuth')}
+          >
+            <Text style={styles.secondaryButtonText}>Continue with Phone</Text>
           </TouchableOpacity>
         </View>
 
@@ -98,55 +122,104 @@ export default function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  inner: { flex: 1, paddingHorizontal: spacing.xl },
-  back: { marginTop: spacing.md, marginBottom: spacing.xl },
+  inner: { flex: 1, paddingHorizontal: 24 },
+  back: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 42,
+    color: colors.primaryLight,
+    letterSpacing: 4,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
   title: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 40,
+    fontSize: 36,
     color: colors.text,
     letterSpacing: 2,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontFamily: 'Barlow_400Regular',
-    fontSize: 16,
-    color: colors.textSecondary,
     marginBottom: spacing.xl,
   },
   form: { gap: spacing.md },
   inputWrap: { gap: 6 },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   inputLabel: {
     fontFamily: 'Barlow_600SemiBold',
-    fontSize: 11,
-    color: colors.textDim,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.3)',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
+  forgotLink: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 13,
+    color: colors.primaryLight,
+  },
   input: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: radius.sm,
+    backgroundColor: '#151515',
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 14,
+    paddingVertical: 16,
     color: colors.text,
     fontFamily: 'Barlow_400Regular',
     fontSize: 15,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 17,
+    borderRadius: 14,
+    height: 54,
     alignItems: 'center',
-    marginTop: spacing.sm,
+    justifyContent: 'center',
+    marginTop: 4,
   },
-  primaryButtonText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
-  linkText: {
-    color: colors.textSecondary,
+  primaryButtonText: {
+    color: '#fff',
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22,
+    letterSpacing: 2,
+  },
+  separator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  separatorText: {
+    color: 'rgba(255,255,255,0.3)',
     fontFamily: 'Barlow_400Regular',
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    fontSize: 14,
+    fontSize: 13,
+  },
+  secondaryButton: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  secondaryButtonText: {
+    color: colors.text,
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 15,
   },
   footer: {
     flexDirection: 'row',
@@ -154,6 +227,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     paddingBottom: spacing.xl,
   },
-  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 15, color: colors.textSecondary },
-  footerLink: { color: colors.primary, fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
+  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  footerLink: { color: colors.primaryLight, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
 });

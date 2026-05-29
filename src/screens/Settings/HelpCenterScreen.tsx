@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, radius } from '../../utils/theme';
+import { colors, spacing } from '../../utils/theme';
 
 type Props = { navigation: any };
 
@@ -12,37 +12,46 @@ const FAQS = [
   { q: 'Can I delete a post?', a: 'Tap the three dots on any of your posts to access the delete option.' },
 ];
 
+const LINKS = [
+  { icon: 'flag-outline' as const, label: 'Report a Problem' },
+  { icon: 'mail-outline' as const, label: 'Contact Support' },
+  { icon: 'document-text-outline' as const, label: 'Community Guidelines' },
+];
+
 export default function HelpCenterScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help Center</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>HELP CENTER</Text>
+        <View style={{ width: 40 }} />
       </View>
-      <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
-        <Text style={typography.h3}>FAQs</Text>
-        {FAQS.map((f, i) => (
-          <View key={i} style={styles.faq}>
-            <Text style={styles.question}>{f.q}</Text>
-            <Text style={styles.answer}>{f.a}</Text>
-          </View>
-        ))}
-        <View style={styles.links}>
-          <TouchableOpacity style={styles.linkRow}>
-            <Ionicons name="flag-outline" size={20} color={colors.primary} />
-            <Text style={styles.linkText}>Report a Problem</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.linkRow}>
-            <Ionicons name="mail-outline" size={20} color={colors.primary} />
-            <Text style={styles.linkText}>Contact Support</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.linkRow}>
-            <Ionicons name="document-text-outline" size={20} color={colors.primary} />
-            <Text style={styles.linkText}>Community Guidelines</Text>
-          </TouchableOpacity>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionHeader}>FAQS</Text>
+        <View style={styles.card}>
+          {FAQS.map((f, i) => (
+            <View key={i} style={[styles.faqItem, i < FAQS.length - 1 && styles.faqBorder]}>
+              <Text style={styles.question}>{f.q}</Text>
+              <Text style={styles.answer}>{f.a}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={[styles.sectionHeader, { marginTop: 24 }]}>SUPPORT</Text>
+        <View style={styles.card}>
+          {LINKS.map((l, i) => (
+            <TouchableOpacity key={l.label} style={[styles.linkRow, i < LINKS.length - 1 && styles.faqBorder]}>
+              <View style={styles.linkIcon}>
+                <Ionicons name={l.icon} size={18} color={colors.primary} />
+              </View>
+              <Text style={styles.linkText}>{l.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -55,21 +64,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { ...typography.h3 },
-  faq: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.xs,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  question: { color: colors.text, fontWeight: '700', fontSize: 14 },
-  answer: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
-  links: { gap: spacing.sm },
-  linkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
-  linkText: { color: colors.primary, fontSize: 15 },
+  headerTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    letterSpacing: 2,
+    color: colors.text,
+  },
+  content: { padding: 16, paddingBottom: 120 },
+  sectionHeader: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  card: {
+    backgroundColor: '#151515',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  faqItem: { padding: 16 },
+  faqBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  question: { color: colors.text, fontFamily: 'Barlow_700Bold', fontSize: 14, marginBottom: 6 },
+  answer: { color: 'rgba(255,255,255,0.5)', fontFamily: 'Barlow_400Regular', fontSize: 13, lineHeight: 19 },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    gap: 14,
+  },
+  linkIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkText: { flex: 1, color: colors.text, fontFamily: 'Barlow_500Medium', fontSize: 15 },
 });
