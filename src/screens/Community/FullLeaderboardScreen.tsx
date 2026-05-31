@@ -179,7 +179,7 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
             >
               <Text style={styles.rank}>#{index + 1}</Text>
               <Text style={styles.username}>{item.username}</Text>
-              <Text style={styles.value}>{item.currentStreak ?? 0} WEEKS</Text>
+              <Text style={styles.value}>{item.currentStreak ?? 0} {(item.currentStreak ?? 0) === 1 ? 'WEEK' : 'WEEKS'}</Text>
             </TouchableOpacity>
           )}
           contentContainerStyle={{ paddingBottom: 120 }}
@@ -267,7 +267,7 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
               >
                 <Text style={styles.rank}>#{i + 1}</Text>
                 <Text style={styles.username}>{m.username}</Text>
-                <Text style={styles.value}>{m.currentStreak ?? 0} WEEKS</Text>
+                <Text style={styles.value}>{m.currentStreak ?? 0} {(m.currentStreak ?? 0) === 1 ? 'WEEK' : 'WEEKS'}</Text>
               </TouchableOpacity>
             ))}
           </View>

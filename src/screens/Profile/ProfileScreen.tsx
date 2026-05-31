@@ -64,6 +64,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
       try {
         if (tab === 'groups') {
           setPosts([]);
+          setGroups([]);
           getUserGroups(targetUid).then(setGroups);
           return;
         }

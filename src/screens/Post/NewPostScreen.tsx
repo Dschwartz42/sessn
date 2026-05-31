@@ -126,6 +126,7 @@ export default function NewPostScreen({ navigation }: Props) {
   const handlePost = async () => {
     if (!user || !userDoc) return;
     if (!title.trim()) { Alert.alert('Error', 'Please add a title.'); return; }
+    if (!duration.trim() || parseInt(duration) <= 0) { Alert.alert('Error', 'Please enter the workout duration.'); return; }
     if (postType === 'independent' && selectedTypes.length === 0) {
       Alert.alert('Error', 'Please select at least one workout type.');
       return;

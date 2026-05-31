@@ -78,8 +78,12 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
-          navigation.goBack();
+          try {
+            await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+            navigation.goBack();
+          } catch {
+            Alert.alert('Error', 'Could not delete post. Try again.');
+          }
         },
       },
     ]);
@@ -102,7 +106,16 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     }
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
+      {
+        text: 'Repost',
+        onPress: async () => {
+          try {
+            await repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl);
+          } catch {
+            Alert.alert('Error', 'Could not repost. Try again.');
+          }
+        },
+      },
     ]);
   };
 

@@ -85,13 +85,9 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
+    const loadStreaks = async () => {
       try {
-        const [g, ids] = await Promise.all([
-          getUserGroups(user.uid),
-          getFollowingIds(user.uid),
-        ]);
-        setGroups(g);
+        const ids = await getFollowingIds(user.uid);
         if (ids.length > 0) {
           const snap = await getDocs(
             query(collection(db, 'users'), where(documentId(), 'in', ids.slice(0, 30)))
@@ -104,7 +100,7 @@ export default function CommunityScreen({ navigation }: Props) {
         setLoading(false);
       }
     };
-    load();
+    loadStreaks();
   }, [user]);
 
   useFocusEffect(
@@ -247,7 +243,7 @@ export default function CommunityScreen({ navigation }: Props) {
                     avatarGradient={[colors.primary]}
                     name={u.username ?? 'user'}
                     stat={String(u.currentStreak ?? 0)}
-                    statUnit="WEEKS"
+                    statUnit={(u.currentStreak ?? 0) === 1 ? 'WEEK' : 'WEEKS'}
                     isYou={u.uid === user?.uid}
                     onPress={() => navigation.navigate('UserProfile', { uid: u.uid })}
                   />
