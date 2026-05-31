@@ -193,6 +193,7 @@ export default function CommunityScreen({ navigation }: Props) {
                 timeFrame={timeFrame}
                 currentUid={user?.uid ?? ''}
                 navigation={navigation}
+                onLeave={() => setGroups((prev) => prev.filter((g) => g.id !== group.id))}
               />
             ))
           )}
@@ -271,9 +272,9 @@ export default function CommunityScreen({ navigation }: Props) {
 type PeriodStats = Record<string, { sessns: number; lbs: number; mins: number }>;
 
 function GroupCard({
-  group, timeFrame, currentUid, navigation,
+  group, timeFrame, currentUid, navigation, onLeave,
 }: {
-  group: Group; timeFrame: TimeFrame; currentUid: string; navigation: any;
+  group: Group; timeFrame: TimeFrame; currentUid: string; navigation: any; onLeave?: () => void;
 }) {
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [metric, setMetric] = useState<Metric>('sessns');
@@ -366,8 +367,7 @@ function GroupCard({
         style: 'destructive',
         onPress: async () => {
           await leaveGroup(group.id, currentUid);
-          // Parent will re-render because getUserGroups is called on mount
-          Alert.alert('Left group', `You've left "${group.name}".`);
+          onLeave?.();
         },
       },
     ]);

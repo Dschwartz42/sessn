@@ -1,20 +1,49 @@
 {
   "expo": {
-    "name": "sessn-app",
+    "name": "Sessn",
     "slug": "sessn-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0a0a0a"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.sessn.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sessn.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Sessn uses your camera to add photos to your workout posts.",
+        "NSPhotoLibraryUsageDescription": "Sessn accesses your photo library to add images to your workout posts.",
+        "NSPhotoLibraryAddUsageDescription": "Sessn saves workout images to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "Sessn uses your location to tag your workouts with a gym or spot.",
+        "NSMicrophoneUsageDescription": "Sessn may use your microphone when recording workout clips.",
+        "NSUserNotificationsUsageDescription": "Sessn sends push notifications for likes, follows, and group activity."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "package": "com.sessn.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
@@ -26,21 +55,31 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#6B5BFF",
+          "color": "#635BFF",
           "sounds": []
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sessn accesses your photo library to add images to your workout posts.",
+          "cameraPermission": "Sessn uses your camera to add photos to your workout posts."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Sessn uses your location to tag your workouts with a gym or spot."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Sessn accesses your photo library to add images to your workout posts.",
+          "savePhotosPermission": "Sessn saves workout images to your photo library.",
+          "isAccessMediaLocationEnabled": false
+        }
       ]
-    ],
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    ]
   }
 }
