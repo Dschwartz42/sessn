@@ -4,7 +4,7 @@ import {
   SafeAreaView, Image, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, documentId } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Group, GroupMember, UserDoc } from '../../types';
@@ -80,7 +80,7 @@ export default function CommunityScreen({ navigation }: Props) {
         const ids = await getFollowingIds(user.uid);
         if (ids.length > 0) {
           const snap = await getDocs(
-            query(collection(db, 'users'), where('uid', 'in', ids.slice(0, 30)))
+            query(collection(db, 'users'), where(documentId(), 'in', ids.slice(0, 30)))
           );
           const friends = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc));
           friends.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
@@ -273,24 +273,34 @@ function GroupCard({
   group: Group; timeFrame: TimeFrame; currentUid: string; navigation: any;
 }) {
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [metric, setMetric] = useState<Metric>('sessns');
 
   useEffect(() => {
     getGroupMembers(group.id).then((m) => {
-      const sorted = [...m].sort((a, b) => {
-        if (timeFrame === 'lbs') return (b.totalLbsLifted ?? 0) - (a.totalLbsLifted ?? 0);
-        if (timeFrame === 'hrs') return (b.totalTimeMinutes ?? 0) - (a.totalTimeMinutes ?? 0);
-        return (b.totalSessns ?? 0) - (a.totalSessns ?? 0);
-      });
-      setMembers(sorted);
+      setMembers(m);
     });
-  }, [group.id, timeFrame]);
+  }, [group.id]);
+
+  const sorted = [...members].sort((a, b) => {
+    if (metric === 'lbs') return (b.totalLbsLifted ?? 0) - (a.totalLbsLifted ?? 0);
+    if (metric === 'hrs') return (b.totalTimeMinutes ?? 0) - (a.totalTimeMinutes ?? 0);
+    return (b.totalSessns ?? 0) - (a.totalSessns ?? 0);
+  });
 
   const getStat = (m: GroupMember): [string, string] => {
+    if (metric === 'lbs') return [`${Math.round(m.totalLbsLifted ?? 0)}`, 'LBS'];
+    if (metric === 'hrs') return [`${Math.round((m.totalTimeMinutes ?? 0) / 60)}`, 'HRS'];
     return [`${m.totalSessns ?? 0}`, 'SESSNS'];
   };
 
   const getInitials = (username: string) =>
     username.slice(0, 2).toUpperCase();
+
+  const METRICS: { key: Metric; label: string }[] = [
+    { key: 'sessns', label: 'SESSNS' },
+    { key: 'lbs', label: 'LBS' },
+    { key: 'hrs', label: 'HRS' },
+  ];
 
   return (
     <View style={styles.groupCard}>
@@ -306,12 +316,24 @@ function GroupCard({
           <Text style={styles.groupName}>{group.name}</Text>
           <Text style={styles.groupMeta}>{group.memberCount} members</Text>
         </View>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>Sessns</Text>
-        </View>
       </View>
 
-      {members.slice(0, 4).map((m, i) => {
+      {/* Metric toggle */}
+      <View style={styles.metricToggle}>
+        {METRICS.map((m) => (
+          <TouchableOpacity
+            key={m.key}
+            style={[styles.metricTab, metric === m.key && styles.metricTabActive]}
+            onPress={() => setMetric(m.key)}
+          >
+            <Text style={[styles.metricTabText, metric === m.key && styles.metricTabTextActive]}>
+              {m.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {sorted.slice(0, 4).map((m, i) => {
         const [stat, unit] = getStat(m);
         return (
           <LeaderRow
@@ -458,6 +480,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Barlow_700Bold', fontSize: 10,
     textTransform: 'uppercase', letterSpacing: 0.8, color: colors.primaryLight,
   },
+
+  /* Metric toggle */
+  metricToggle: {
+    flexDirection: 'row',
+    marginHorizontal: 12, marginTop: 10, marginBottom: 4,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10, padding: 3, gap: 3,
+  },
+  metricTab: {
+    flex: 1, paddingVertical: 6, borderRadius: 7, alignItems: 'center',
+  },
+  metricTabActive: {
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1, borderColor: colors.primaryBorder,
+  },
+  metricTabText: {
+    fontFamily: 'Barlow_700Bold', fontSize: 11,
+    color: 'rgba(255,255,255,0.35)', letterSpacing: 0.8,
+  },
+  metricTabTextActive: { color: colors.primaryLight },
 
   /* Leaderboard rows */
   leaderRow: {

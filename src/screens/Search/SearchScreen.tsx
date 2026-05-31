@@ -74,22 +74,21 @@ export default function SearchScreen({ navigation }: Props) {
     clearResults();
     try {
       const lower = text.trim().toLowerCase();
-      const suffix = '';
 
       await Promise.all(filtersToRun.map(async (f) => {
         if (f === 'people') {
           const snap = await getDocs(
-            query(collection(db, 'users'), orderBy('username'), startAt(lower), endAt(lower + ''), limit(10))
+            query(collection(db, 'users'), orderBy('username'), startAt(lower), endAt(lower + ''), limit(10))
           );
           setUserResults(snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
         } else if (f === 'groups') {
           const snap = await getDocs(
-            query(collection(db, 'groups'), orderBy('name'), startAt(text.trim()), endAt(text.trim() + ''), limit(10))
+            query(collection(db, 'groups'), orderBy('name'), startAt(text.trim()), endAt(text.trim() + ''), limit(10))
           );
           setGroupResults(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Group)));
         } else if (f === 'splits') {
           const snap = await getDocs(
-            query(collection(db, 'posts'), orderBy('split'), startAt(lower), endAt(lower + ''), limit(10))
+            query(collection(db, 'posts'), orderBy('split'), startAt(lower), endAt(lower + ''), limit(10))
           );
           setPostResults(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post)));
         }

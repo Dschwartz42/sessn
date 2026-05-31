@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../services/firebase';
 import { colors, spacing, radius } from '../../utils/theme';
 
 const MILESTONES = [
@@ -22,12 +24,28 @@ const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 type Props = { navigation: any };
 
 export default function StreakScreen({ navigation }: Props) {
-  const { userDoc } = useAuth();
+  const { user, userDoc } = useAuth();
   const streak = userDoc?.currentStreak ?? 0;
   const totalSessns = userDoc?.totalSessns ?? 0;
   const totalTime = userDoc?.totalTimeMinutes ?? 0;
+  const [weekSessns, setWeekSessns] = useState(0);
 
   const todayIdx = (new Date().getDay() + 6) % 7; // Mon=0…Sun=6
+
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - todayIdx);
+    weekStart.setHours(0, 0, 0, 0);
+    getDocs(
+      query(
+        collection(db, 'posts'),
+        where('authorId', '==', user.uid),
+        where('createdAt', '>=', Timestamp.fromDate(weekStart))
+      )
+    ).then((snap) => setWeekSessns(snap.size)).catch(() => {});
+  }, [user, todayIdx]);
 
   const checkMilestone = (id: string): boolean => {
     if (!userDoc) return false;
@@ -155,7 +173,7 @@ export default function StreakScreen({ navigation }: Props) {
           </View>
           <View style={styles.weekSummary}>
             <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{todayIdx}</Text>
+              <Text style={styles.weekStatValue}>{weekSessns}</Text>
               <Text style={styles.weekStatLabel}>SESSNS THIS WEEK</Text>
             </View>
             <View style={styles.weekStat}>
@@ -163,7 +181,7 @@ export default function StreakScreen({ navigation }: Props) {
               <Text style={styles.weekStatLabel}>TOTAL TIME</Text>
             </View>
             <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{7 - todayIdx - 1}</Text>
+              <Text style={styles.weekStatValue}>{Math.max(0, todayIdx + 1 - weekSessns)}</Text>
               <Text style={styles.weekStatLabel}>REST DAYS</Text>
             </View>
           </View>

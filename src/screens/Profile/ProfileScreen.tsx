@@ -182,14 +182,32 @@ export default function ProfileScreen({ navigation, route }: Props) {
             <Text style={styles.statNum}>{profileDoc?.postCount ?? 0}</Text>
             <Text style={styles.statLabel}>POSTS</Text>
           </View>
-          <View style={styles.statItem}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('FollowerList', {
+                uid: targetUid,
+                type: 'followers',
+                username: profileDoc?.username ?? '',
+              })
+            }
+          >
             <Text style={styles.statNum}>{profileDoc?.followersCount ?? 0}</Text>
             <Text style={styles.statLabel}>FOLLOWERS</Text>
-          </View>
-          <View style={styles.statItem}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('FollowerList', {
+                uid: targetUid,
+                type: 'following',
+                username: profileDoc?.username ?? '',
+              })
+            }
+          >
             <Text style={styles.statNum}>{profileDoc?.followingCount ?? 0}</Text>
             <Text style={styles.statLabel}>FOLLOWING</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Tab bar */}
