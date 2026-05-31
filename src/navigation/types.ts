@@ -16,18 +16,20 @@ export type HomeStackParamList = {
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
 
-export type SearchStackParamList = {
-  Search: undefined;
-  UserProfile: { uid: string };
-  ExpandedPost: { postId: string };
-};
-
 export type CommunityStackParamList = {
   Community: undefined;
   FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
   CreateGroup: undefined;
+  FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
+};
+
+export type SearchStackParamList = {
+  Search: undefined;
+  UserProfile: { uid: string };
+  ExpandedPost: { postId: string };
+  FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
 
 export type ProfileStackParamList = {

@@ -92,6 +92,7 @@ function SearchNavigator() {
       <SearchStack.Screen name="Search" component={SearchScreen} />
       <SearchStack.Screen name="UserProfile" component={ProfileScreen} />
       <SearchStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
+      <SearchStack.Screen name="FollowerList" component={FollowerListScreen} />
     </SearchStack.Navigator>
   );
 }
@@ -104,6 +105,7 @@ function CommunityNavigator() {
       <CommunityStack.Screen name="UserProfile" component={ProfileScreen} />
       <CommunityStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <CommunityStack.Screen name="CreateGroup" component={CreateGroupScreen} />
+      <CommunityStack.Screen name="FollowerList" component={FollowerListScreen} />
     </CommunityStack.Navigator>
   );
 }

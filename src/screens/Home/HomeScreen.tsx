@@ -174,7 +174,9 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.streakFire}>🔥</Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.streakNum}>{streak} WEEK STREAK</Text>
-            <Text style={styles.streakSub}>Keep it going!</Text>
+            <Text style={styles.streakSub}>
+            {streak === 0 ? 'Log a Sessn to start your streak.' : 'Keep it going!'}
+          </Text>
           </View>
         </View>
         <View style={styles.streakDots}>

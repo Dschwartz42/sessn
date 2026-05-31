@@ -9,7 +9,7 @@ import { colors, spacing, radius } from '../../utils/theme';
 
 const MILESTONES = [
   { id: 'first_sessn', emoji: '🏋️', label: 'First Sessn', description: 'Log your first workout' },
-  { id: 'week_1', emoji: '🔥', label: '1-Week Streak', description: 'Work out every week for 1 week' },
+  { id: 'week_1', emoji: '🔥', label: '1-Week Streak', description: 'Log at least one Sessn in a week' },
   { id: 'month_1', emoji: '📅', label: '1-Month Streak', description: '4 consecutive weeks' },
   { id: 'sessns_50', emoji: '💪', label: '50 Sessns', description: 'Log 50 total Sessns' },
   { id: 'sessns_100', emoji: '🏆', label: '100 Sessns', description: 'Log 100 total Sessns' },
@@ -163,7 +163,11 @@ export default function StreakScreen({ navigation }: Props) {
             </View>
           </View>
           <Text style={styles.streakTagline}>
-            Keep it going — stay consistent this week
+            {streak === 0
+              ? 'Log your first Sessn this week to start your streak.'
+              : streak === 1
+              ? 'Great start — post again next week to keep it going.'
+              : `${streak} weeks strong — don't break the chain.`}
           </Text>
         </View>
 
