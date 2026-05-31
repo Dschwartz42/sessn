@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { UserDoc, Post, Group } from '../../types';
 import { colors } from '../../utils/theme';
 import { followUser, unfollowUser, isFollowing } from '../../services/followService';
+import { joinGroup, leaveGroup, isMember } from '../../services/groupService';
 
 type FilterOption = 'people' | 'groups' | 'splits';
 const ALL_FILTERS: FilterOption[] = ['people', 'groups', 'splits'];
@@ -83,7 +84,7 @@ export default function SearchScreen({ navigation }: Props) {
           setUserResults(snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc)));
         } else if (f === 'groups') {
           const snap = await getDocs(
-            query(collection(db, 'groups'), orderBy('name'), startAt(text.trim()), endAt(text.trim() + ''), limit(10))
+            query(collection(db, 'groups'), orderBy('nameLower'), startAt(lower), endAt(lower + ''), limit(10))
           );
           setGroupResults(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Group)));
         } else if (f === 'splits') {
@@ -257,7 +258,7 @@ export default function SearchScreen({ navigation }: Props) {
                 <Text style={styles.sectionTitle}>Groups</Text>
               )}
               {groupResults.map((g) => (
-                <GroupRow key={g.id} group={g} />
+                <GroupRow key={g.id} group={g} currentUid={user?.uid ?? ''} />
               ))}
             </>
           )}
@@ -292,7 +293,7 @@ export default function SearchScreen({ navigation }: Props) {
           ))}
           <Text style={styles.sectionTitle}>Popular Groups</Text>
           {popularGroups.map((g) => (
-            <GroupRow key={g.id} group={g} />
+            <GroupRow key={g.id} group={g} currentUid={user?.uid ?? ''} />
           ))}
           <Text style={styles.sectionTitle}>Popular Sessns</Text>
           {popularPosts.map((p) => (
@@ -345,7 +346,32 @@ function UserRow({ user, currentUid, onPress }: { user: UserDoc; currentUid: str
   );
 }
 
-function GroupRow({ group }: { group: Group }) {
+function GroupRow({ group, currentUid }: { group: Group; currentUid: string }) {
+  const { userDoc } = useAuth();
+  const [joined, setJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
+
+  useEffect(() => {
+    if (!currentUid) return;
+    isMember(group.id, currentUid).then(setJoined);
+  }, []);
+
+  const toggle = async () => {
+    if (!currentUid || !userDoc) return;
+    setJoining(true);
+    try {
+      if (joined) {
+        await leaveGroup(group.id, currentUid);
+        setJoined(false);
+      } else {
+        await joinGroup(group.id, currentUid, userDoc.username, userDoc.profilePicUrl);
+        setJoined(true);
+      }
+    } finally {
+      setJoining(false);
+    }
+  };
+
   return (
     <View style={styles.row}>
       {group.pictureUrl ? (
@@ -357,10 +383,20 @@ function GroupRow({ group }: { group: Group }) {
       )}
       <View style={styles.rowInfo}>
         <Text style={styles.rowTitle}>{group.name}</Text>
-        <Text style={styles.rowSub}>{group.memberCount ?? 0} members</Text>
+        <Text style={styles.rowSub}>
+          {group.memberCount ?? 0} members{group.isPrivate ? ' · Private' : ''}
+        </Text>
       </View>
-      {group.isPrivate && (
-        <Ionicons name="lock-closed-outline" size={16} color="rgba(255,255,255,0.3)" />
+      {currentUid && (
+        <TouchableOpacity
+          style={[styles.followBtn, joined && styles.followingBtn]}
+          onPress={toggle}
+          disabled={joining}
+        >
+          <Text style={[styles.followBtnText, joined && styles.followingBtnText]}>
+            {joining ? '...' : joined ? 'Joined' : 'Join'}
+          </Text>
+        </TouchableOpacity>
       )}
     </View>
   );

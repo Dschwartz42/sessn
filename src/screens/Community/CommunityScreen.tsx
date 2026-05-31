@@ -4,12 +4,13 @@ import {
   SafeAreaView, Image, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, getDocs, documentId } from 'firebase/firestore';
+import { collection, query, where, getDocs, documentId, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Group, GroupMember, UserDoc } from '../../types';
 import { colors } from '../../utils/theme';
 import { getUserGroups, getGroupMembers } from '../../services/groupService';
+import { calcLbs } from '../../services/postService';
 import { getFollowingIds } from '../../services/followService';
 
 type TimeFrame = 'weekly' | 'monthly' | 'alltime';
@@ -267,6 +268,8 @@ export default function CommunityScreen({ navigation }: Props) {
   );
 }
 
+type PeriodStats = Record<string, { sessns: number; lbs: number; mins: number }>;
+
 function GroupCard({
   group, timeFrame, currentUid, navigation,
 }: {
@@ -274,23 +277,76 @@ function GroupCard({
 }) {
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [metric, setMetric] = useState<Metric>('sessns');
+  const [periodStats, setPeriodStats] = useState<PeriodStats | null>(null);
 
   useEffect(() => {
-    getGroupMembers(group.id).then((m) => {
-      setMembers(m);
-    });
+    getGroupMembers(group.id).then(setMembers);
   }, [group.id]);
 
-  const sorted = [...members].sort((a, b) => {
-    if (metric === 'lbs') return (b.totalLbsLifted ?? 0) - (a.totalLbsLifted ?? 0);
-    if (metric === 'hrs') return (b.totalTimeMinutes ?? 0) - (a.totalTimeMinutes ?? 0);
-    return (b.totalSessns ?? 0) - (a.totalSessns ?? 0);
-  });
+  useEffect(() => {
+    if (timeFrame === 'alltime' || members.length === 0) {
+      setPeriodStats(null);
+      return;
+    }
+    const now = new Date();
+    let start: Date;
+    if (timeFrame === 'weekly') {
+      const day = now.getDay();
+      start = new Date(now);
+      start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+      start.setHours(0, 0, 0, 0);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const uids = members.map((m) => m.uid);
+    const chunks: string[][] = [];
+    for (let i = 0; i < uids.length; i += 30) chunks.push(uids.slice(i, i + 30));
+
+    Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(
+            collection(db, 'posts'),
+            where('authorId', 'in', chunk),
+            where('createdAt', '>=', Timestamp.fromDate(start)),
+          ),
+        ),
+      ),
+    ).then((snaps) => {
+      const stats: PeriodStats = {};
+      snaps.flatMap((s) => s.docs).forEach((d) => {
+        const data = d.data();
+        if (data.isRepost) return;
+        const uid: string = data.authorId;
+        if (!stats[uid]) stats[uid] = { sessns: 0, lbs: 0, mins: 0 };
+        stats[uid].sessns += 1;
+        stats[uid].mins += data.durationMinutes ?? 0;
+        stats[uid].lbs += calcLbs(data.exercises);
+      });
+      setPeriodStats(stats);
+    });
+  }, [timeFrame, members]);
+
+  const getVal = (m: GroupMember, met: Metric): number => {
+    if (periodStats) {
+      const p = periodStats[m.uid] ?? { sessns: 0, lbs: 0, mins: 0 };
+      if (met === 'lbs') return p.lbs;
+      if (met === 'hrs') return p.mins;
+      return p.sessns;
+    }
+    if (met === 'lbs') return m.totalLbsLifted ?? 0;
+    if (met === 'hrs') return m.totalTimeMinutes ?? 0;
+    return m.totalSessns ?? 0;
+  };
+
+  const sorted = [...members].sort((a, b) => getVal(b, metric) - getVal(a, metric));
 
   const getStat = (m: GroupMember): [string, string] => {
-    if (metric === 'lbs') return [`${Math.round(m.totalLbsLifted ?? 0)}`, 'LBS'];
-    if (metric === 'hrs') return [`${Math.round((m.totalTimeMinutes ?? 0) / 60)}`, 'HRS'];
-    return [`${m.totalSessns ?? 0}`, 'SESSNS'];
+    const val = getVal(m, metric);
+    if (metric === 'lbs') return [`${Math.round(val)}`, 'LBS'];
+    if (metric === 'hrs') return [`${Math.round(val / 60)}`, 'HRS'];
+    return [`${val}`, 'SESSNS'];
   };
 
   const getInitials = (username: string) =>

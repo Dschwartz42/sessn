@@ -11,7 +11,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, radius, typography } from '../../utils/theme';
-import { createPost, saveWorkoutTemplate } from '../../services/postService';
+import { createPost, saveWorkoutTemplate, getSavedWorkouts } from '../../services/postService';
 import { Post, WorkoutType, ClassType, Exercise, CardioDetails } from '../../types';
 
 type PostType = 'independent' | 'class';
@@ -55,6 +55,9 @@ export default function NewPostScreen({ navigation }: Props) {
   const [instructions, setInstructions] = useState('');
   const [saveWorkout, setSaveWorkout] = useState(false);
   const [workoutDescription, setWorkoutDescription] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState<Awaited<ReturnType<typeof getSavedWorkouts>>>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [sport, setSport] = useState('');
 
   // Class details
@@ -84,6 +87,28 @@ export default function NewPostScreen({ navigation }: Props) {
     setSelectedTypes((prev) =>
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
     );
+  };
+
+  const loadAndShowTemplates = async () => {
+    if (!user) return;
+    setLoadingTemplates(true);
+    try {
+      const saved = await getSavedWorkouts(user.uid);
+      setTemplates(saved);
+      setShowTemplates(true);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  const applyTemplate = (t: (typeof templates)[number]) => {
+    setShowTemplates(false);
+    if (t.workoutTypes?.length) setSelectedTypes(t.workoutTypes as any);
+    if (t.durationMinutes) setDuration(String(t.durationMinutes));
+    if (t.exercises) setExercises(t.exercises);
+    if (t.muscleGroups) setMuscleGroups(t.muscleGroups);
+    if (t.warmupDescription) { setIncludeWarmup(true); setWarmup(t.warmupDescription); }
+    if (t.workoutInstructions) { setIncludeInstructions(true); setInstructions(t.workoutInstructions); }
   };
 
   const addExercise = () => {
@@ -482,15 +507,60 @@ export default function NewPostScreen({ navigation }: Props) {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.choiceBtn}
-              onPress={() => { setShowWorkoutChoice(false); Alert.alert('Coming soon', 'Saved workout templates coming soon.'); }}
+              onPress={() => { setShowWorkoutChoice(false); loadAndShowTemplates(); }}
+              disabled={loadingTemplates}
             >
               <Ionicons name="bookmark-outline" size={24} color={colors.primary} />
-              <Text style={styles.choiceBtnText}>Use Saved Workout</Text>
+              <Text style={styles.choiceBtnText}>
+                {loadingTemplates ? 'Loading…' : 'Use Saved Workout'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.choiceCancel}
               onPress={() => setShowWorkoutChoice(false)}
             >
+              <Text style={styles.choiceCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
+      {/* Saved templates picker */}
+      {showTemplates && (
+        <Modal transparent animationType="slide" visible onRequestClose={() => setShowTemplates(false)}>
+          <TouchableWithoutFeedback onPress={() => setShowTemplates(false)}>
+            <View style={styles.modalOverlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.choicePanel}>
+            <View style={styles.choiceHandle} />
+            <Text style={[styles.choiceBtnText, { paddingHorizontal: spacing.md, paddingBottom: 8, fontFamily: 'Barlow_700Bold', fontSize: 15, color: colors.text }]}>
+              Saved Templates
+            </Text>
+            {templates.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                <Text style={{ color: colors.textDim, fontFamily: 'Barlow_400Regular', fontSize: 14 }}>
+                  No saved templates yet. Save a workout after posting.
+                </Text>
+              </View>
+            ) : (
+              templates.map((t) => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={styles.choiceBtn}
+                  onPress={() => { setStep('details'); applyTemplate(t); }}
+                >
+                  <Ionicons name="barbell-outline" size={22} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.choiceBtnText}>
+                      {t.workoutTypes?.join(' · ') || 'Workout'}
+                    </Text>
+                    <Text style={{ color: colors.textDim, fontSize: 12, fontFamily: 'Barlow_400Regular' }}>
+                      {t.durationMinutes} min · {t.exercises?.length ?? 0} exercises
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+            <TouchableOpacity style={styles.choiceCancel} onPress={() => setShowTemplates(false)}>
               <Text style={styles.choiceCancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
