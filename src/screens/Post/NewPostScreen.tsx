@@ -125,10 +125,9 @@ export default function NewPostScreen({ navigation }: Props) {
         ? {
             type: cardioType,
             durationMinutes: parseInt(cardioDuration) || 0,
-            distance: cardioDistance ? parseFloat(cardioDistance) : null,
+            distance: cardioDistance ? parseFloat(cardioDistance) : undefined,
             distanceUnit: 'miles',
             timing: cardioTiming,
-            instructions: null,
           }
         : undefined;
 

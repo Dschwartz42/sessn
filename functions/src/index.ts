@@ -81,9 +81,32 @@ export const onNotificationCreated = functions.firestore
     ]);
   });
 
-// Writes a notification doc when a follow happens.
-// Call this from the app after followUser() succeeds.
-// Alternatively, trigger off the follows collection:
+// Writes a follow_request notification when a private-account follow request is created.
+export const onFollowRequestCreated = functions.firestore
+  .document('followRequests/{requestId}')
+  .onCreate(async (snap) => {
+    const { followerId, followeeId } = snap.data();
+    if (!followerId || !followeeId) return;
+
+    const followerSnap = await db.doc(`users/${followerId}`).get();
+    if (!followerSnap.exists) return;
+    const follower = followerSnap.data()!;
+
+    await db
+      .collection('notifications')
+      .doc(followeeId)
+      .collection('items')
+      .add({
+        type: 'follow_request',
+        fromUserId: followerId,
+        fromUsername: follower.username ?? '',
+        fromUserPic: follower.profilePicUrl ?? null,
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+  });
+
+// Writes a notification doc when a public-account follow happens.
 export const onFollowCreated = functions.firestore
   .document('follows/{followId}')
   .onCreate(async (snap) => {

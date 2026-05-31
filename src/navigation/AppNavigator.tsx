@@ -28,6 +28,7 @@ import SearchScreen from '../screens/Search/SearchScreen';
 // Community screens
 import CommunityScreen from '../screens/Community/CommunityScreen';
 import FullLeaderboardScreen from '../screens/Community/FullLeaderboardScreen';
+import CreateGroupScreen from '../screens/Community/CreateGroupScreen';
 
 // Profile screens
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -102,6 +103,7 @@ function CommunityNavigator() {
       <CommunityStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
       <CommunityStack.Screen name="UserProfile" component={ProfileScreen} />
       <CommunityStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
+      <CommunityStack.Screen name="CreateGroup" component={CreateGroupScreen} />
     </CommunityStack.Navigator>
   );
 }

@@ -27,6 +27,7 @@ export type CommunityStackParamList = {
   FullLeaderboard: { groupId?: string; type?: string };
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  CreateGroup: undefined;
 };
 
 export type ProfileStackParamList = {

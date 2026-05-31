@@ -11,7 +11,7 @@ import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Notification } from '../../types';
 import { colors, spacing, radius } from '../../utils/theme';
-import { followUser, unfollowUser, isFollowing } from '../../services/followService';
+import { followUser, unfollowUser, isFollowing, acceptFollowRequest, declineFollowRequest } from '../../services/followService';
 import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
 
 type Props = { navigation: any };
@@ -25,7 +25,8 @@ function getGroup(item: Notification): 'Today' | 'This Week' | 'Earlier' {
 }
 
 export default function NotificationsScreen({ navigation }: Props) {
-  const { user } = useAuth();
+  const { user, userDoc } = useAuth();
+  const isPrivateAccount = userDoc?.isPublic === false;
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +69,7 @@ export default function NotificationsScreen({ navigation }: Props) {
         item={item.item}
         navigation={navigation}
         currentUid={user?.uid ?? ''}
+        isPrivateAccount={isPrivateAccount}
       />
     );
   };
@@ -107,8 +109,13 @@ export default function NotificationsScreen({ navigation }: Props) {
   );
 }
 
-function NotifItem({ item, navigation, currentUid }: { item: Notification; navigation: any; currentUid: string }) {
+function NotifItem({
+  item, navigation, currentUid, isPrivateAccount,
+}: {
+  item: Notification; navigation: any; currentUid: string; isPrivateAccount: boolean;
+}) {
   const [followState, setFollowState] = useState<'none' | 'following'>('none');
+  const [requestHandled, setRequestHandled] = useState(false);
 
   useEffect(() => {
     if (item.type !== 'follow_request') return;
@@ -125,9 +132,20 @@ function NotifItem({ item, navigation, currentUid }: { item: Notification; navig
     }
   };
 
+  const handleAccept = async () => {
+    await acceptFollowRequest(currentUid, item.fromUserId);
+    setRequestHandled(true);
+  };
+
+  const handleDecline = async () => {
+    await declineFollowRequest(currentUid, item.fromUserId);
+    setRequestHandled(true);
+  };
+
   const message = () => {
     switch (item.type) {
-      case 'follow_request': return 'started following you.';
+      case 'follow_request': return isPrivateAccount ? 'requested to follow you.' : 'started following you.';
+      case 'follow_accepted': return 'accepted your follow request.';
       case 'like': return 'liked your Sessn.';
       case 'repost': return 'reposted your Sessn.';
       default: return '';
@@ -168,18 +186,29 @@ function NotifItem({ item, navigation, currentUid }: { item: Notification; navig
         <Text style={styles.timeAgo}>{timeAgo}</Text>
       </View>
 
-      {item.type === 'follow_request' && (
-        <TouchableOpacity
-          style={[
-            styles.followBtn,
-            followState === 'following' && styles.followingBtn,
-          ]}
-          onPress={handleFollowBack}
-        >
-          <Text style={[styles.followBtnText, followState === 'following' && styles.followingBtnText]}>
-            {followState === 'following' ? 'Following' : 'Follow Back'}
-          </Text>
-        </TouchableOpacity>
+      {item.type === 'follow_request' && !requestHandled && (
+        isPrivateAccount ? (
+          <View style={styles.requestBtns}>
+            <TouchableOpacity style={styles.acceptBtn} onPress={handleAccept}>
+              <Text style={styles.acceptBtnText}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.declineBtn} onPress={handleDecline}>
+              <Text style={styles.declineBtnText}>Decline</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.followBtn, followState === 'following' && styles.followingBtn]}
+            onPress={handleFollowBack}
+          >
+            <Text style={[styles.followBtnText, followState === 'following' && styles.followingBtnText]}>
+              {followState === 'following' ? 'Following' : 'Follow Back'}
+            </Text>
+          </TouchableOpacity>
+        )
+      )}
+      {item.type === 'follow_request' && requestHandled && (
+        <Text style={styles.handledText}>Done</Text>
       )}
 
       {(item.type === 'like' || item.type === 'repost') && item.postImageUrl && (
@@ -308,4 +337,23 @@ const styles = StyleSheet.create({
     color: colors.primaryLight,
   },
   postThumb: { width: 44, height: 44, borderRadius: 8 },
+  requestBtns: { flexDirection: 'column', gap: 6 },
+  acceptBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  acceptBtnText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 12 },
+  declineBtn: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+  },
+  declineBtnText: { color: 'rgba(255,255,255,0.5)', fontFamily: 'Barlow_600SemiBold', fontSize: 12 },
+  handledText: { color: 'rgba(255,255,255,0.3)', fontFamily: 'Barlow_400Regular', fontSize: 12 },
 });

@@ -9,6 +9,8 @@ import { Post } from '../types';
 import { colors } from '../utils/theme';
 import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../services/postService';
 import { followUser, unfollowUser, isFollowing } from '../services/followService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import ShareSheet from './ShareSheet';
 import WorkoutDetailsPanel from './WorkoutDetailsPanel';
 
@@ -53,6 +55,13 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
 
   const handleRepost = async () => {
     if (!user || !userDoc) return;
+    if (!isOwn) {
+      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
+      if (authorSnap.exists() && authorSnap.data().allowReposts === false) {
+        Alert.alert('Reposts disabled', `@${post.authorUsername} has turned off reposts.`);
+        return;
+      }
+    }
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },

@@ -143,14 +143,14 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.createBtn}
-              onPress={() => Alert.alert('Coming Soon', 'Group creation is coming in the next update.')}
+              onPress={() => navigation.navigate('CreateGroup')}
             >
               <Ionicons name="add" size={18} color="#fff" />
               <Text style={styles.createBtnText}>Create Group</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.joinBtn}
-              onPress={() => Alert.alert('Coming Soon', 'Joining groups is coming in the next update.')}
+              onPress={() => Alert.alert('Find Groups', 'Search for groups using the Search tab.')}
             >
               <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
               <Text style={styles.joinBtnText}>Join Group</Text>

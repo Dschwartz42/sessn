@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from '../../types';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import { getPost, likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../../services/postService';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, radius, typography } from '../../utils/theme';
@@ -54,8 +56,15 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     else { await savePost(post.id, user.uid); setSaved(true); }
   };
 
-  const handleRepost = () => {
+  const handleRepost = async () => {
     if (!user || !userDoc) return;
+    if (post.authorId !== user.uid) {
+      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
+      if (authorSnap.exists() && authorSnap.data().allowReposts === false) {
+        Alert.alert('Reposts disabled', `@${post.authorUsername} has turned off reposts.`);
+        return;
+      }
+    }
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
