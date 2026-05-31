@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { doc, updateDoc, query, collection, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../services/firebase';
+import { getUserGroups } from '../../services/groupService';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, radius, typography } from '../../utils/theme';
 
@@ -74,6 +75,7 @@ export default function EditProfileScreen({ navigation }: Props) {
           return;
         }
       }
+      const newPicUrl = profilePicUrl || null;
       await updateDoc(doc(db, 'users', user.uid), {
         displayName: displayName.trim(),
         username: newUsername,
@@ -83,8 +85,21 @@ export default function EditProfileScreen({ navigation }: Props) {
         fitnessLevel,
         instagramLink: instagramLink.trim(),
         gender,
-        profilePicUrl: profilePicUrl || null,
+        profilePicUrl: newPicUrl,
       });
+
+      // Sync profile pic to all GroupMember docs if it changed
+      if (newPicUrl !== (userDoc?.profilePicUrl ?? null)) {
+        const groups = await getUserGroups(user.uid);
+        if (groups.length > 0) {
+          const batch = writeBatch(db);
+          groups.forEach((g) => {
+            batch.update(doc(db, 'groups', g.id, 'members', user.uid), { profilePicUrl: newPicUrl });
+          });
+          await batch.commit();
+        }
+      }
+
       navigation.goBack();
     } catch (e: any) {
       Alert.alert('Error', e.message);

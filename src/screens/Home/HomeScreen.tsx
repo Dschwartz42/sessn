@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Image, SafeAreaView,
@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import {
   collection, query, where, orderBy, limit,
-  getDocs, onSnapshot,
+  getDocs, onSnapshot, Timestamp,
 } from 'firebase/firestore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { db } from '../../services/firebase';
@@ -30,6 +30,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [weekWorkoutDays, setWeekWorkoutDays] = useState<Set<number>>(new Set());
+  const loadedIds = useRef(new Set<string>());
 
   useEffect(() => {
     if (!user) return;
@@ -43,6 +45,28 @@ export default function HomeScreen({ navigation }: Props) {
     );
     return unsub;
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - todayIdx);
+    weekStart.setHours(0, 0, 0, 0);
+    getDocs(
+      query(
+        collection(db, 'posts'),
+        where('authorId', '==', user.uid),
+        where('createdAt', '>=', Timestamp.fromDate(weekStart)),
+      ),
+    ).then((snap) => {
+      const days = new Set<number>();
+      snap.docs.forEach((d) => {
+        const ts = d.data().createdAt;
+        if (ts?.toDate) days.add((ts.toDate().getDay() + 6) % 7);
+      });
+      setWeekWorkoutDays(days);
+    }).catch(() => {});
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user) return;
@@ -88,10 +112,11 @@ export default function HomeScreen({ navigation }: Props) {
         .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 
       if (refresh) {
+        loadedIds.current = new Set(allPosts.slice(0, PAGE_SIZE).map((p) => p.id));
         setPosts(allPosts.slice(0, PAGE_SIZE));
       } else {
-        const existing = new Set(posts.map((p) => p.id));
-        const next = allPosts.filter((p) => !existing.has(p.id)).slice(0, PAGE_SIZE);
+        const next = allPosts.filter((p) => !loadedIds.current.has(p.id)).slice(0, PAGE_SIZE);
+        next.forEach((p) => loadedIds.current.add(p.id));
         setPosts((prev) => [...prev, ...next]);
       }
     } finally {
@@ -154,22 +179,23 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
         <View style={styles.streakDots}>
           {DAY_LABELS.map((label, i) => {
-            const isPast = i < todayIdx;
             const isToday = i === todayIdx;
+            const didWorkout = weekWorkoutDays.has(i);
+            const isDone = didWorkout && !isToday;
             return (
               <View
                 key={i}
                 style={[
                   styles.streakDot,
-                  isPast && styles.streakDotDone,
-                  isToday && styles.streakDotToday,
-                  !isPast && !isToday && styles.streakDotUpcoming,
+                  (isDone || (isToday && didWorkout)) && styles.streakDotDone,
+                  isToday && !didWorkout && styles.streakDotToday,
+                  i > todayIdx && styles.streakDotUpcoming,
                 ]}
               >
                 <Text style={[
                   styles.streakDotLabel,
-                  isPast && styles.streakDotLabelDone,
-                  isToday && styles.streakDotLabelToday,
+                  (isDone || (isToday && didWorkout)) && styles.streakDotLabelDone,
+                  isToday && !didWorkout && styles.streakDotLabelToday,
                 ]}>
                   {label}
                 </Text>
@@ -221,6 +247,7 @@ export default function HomeScreen({ navigation }: Props) {
             post={item}
             onPress={() => navigation.navigate('ExpandedPost', { postId: item.id })}
             onUserPress={() => navigation.navigate('UserProfile', { uid: item.authorId })}
+            onDelete={() => setPosts((p) => p.filter((x) => x.id !== item.id))}
           />
         )}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}

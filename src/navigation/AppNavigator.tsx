@@ -126,6 +126,7 @@ function ProfileNavigator() {
       <ProfileStack.Screen name="UserProfile" component={ProfileScreen} />
       <ProfileStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <ProfileStack.Screen name="FollowerList" component={FollowerListScreen} />
+      <ProfileStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
     </ProfileStack.Navigator>
   );
 }

@@ -83,6 +83,15 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
     ]);
   };
 
+  const handleReport = () => {
+    Alert.alert('Report Post', 'Why are you reporting this post?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Spam', onPress: () => Alert.alert('Reported', 'Thank you. We\'ll review this post.') },
+      { text: 'Inappropriate Content', onPress: () => Alert.alert('Reported', 'Thank you. We\'ll review this post.') },
+      { text: 'Harassment', onPress: () => Alert.alert('Reported', 'Thank you. We\'ll review this post.') },
+    ]);
+  };
+
   const handleFollow = async () => {
     if (!user) return;
     if (following) { await unfollowUser(user.uid, post.authorId); setFollowing(false); }
@@ -151,11 +160,12 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
         </TouchableOpacity>
         <View style={styles.dateRight}>
           <Text style={styles.dateText}>{dateStr}</Text>
-          {isOwn && (
-            <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="ellipsis-horizontal" size={16} color="rgba(255,255,255,0.35)" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={isOwn ? handleDelete : handleReport}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="ellipsis-horizontal" size={16} color="rgba(255,255,255,0.35)" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -224,7 +234,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
         <WorkoutDetailsPanel post={post} saved={saved} onSave={handleSave} onClose={() => setShowDetails(false)} />
       )}
       {showShare && (
-        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} onClose={() => setShowShare(false)} />
+        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} title={post.title} username={post.authorUsername} onClose={() => setShowShare(false)} />
       )}
     </View>
   );

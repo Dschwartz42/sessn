@@ -4,26 +4,31 @@ import {
   Image, SafeAreaView, ActivityIndicator, Alert, Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc, collection, getDocs, documentId, query, where } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, documentId, query, where, Timestamp } from 'firebase/firestore';
 
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Group, GroupMember, UserDoc } from '../../types';
 import { colors, spacing, radius, typography } from '../../utils/theme';
 import { getGroupMembers, leaveGroup } from '../../services/groupService';
+import { calcLbs } from '../../services/postService';
 import { getFollowingIds } from '../../services/followService';
 
 type Metric = 'sessns' | 'lbs' | 'hrs';
 type Props = { navigation: any; route: any };
 
+type PeriodStats = Record<string, { sessns: number; lbs: number; mins: number }>;
+
 export default function FullLeaderboardScreen({ navigation, route }: Props) {
-  const { groupId, type } = route.params;
+  const { groupId, type, timeFrame: initialTimeFrame } = route.params;
   const isStreaksMode = type === 'streaks';
   const { user } = useAuth();
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [friendStreaks, setFriendStreaks] = useState<UserDoc[]>([]);
   const [metric, setMetric] = useState<Metric>('sessns');
+  const [timeFrame, setTimeFrame] = useState<string>(initialTimeFrame ?? 'alltime');
+  const [periodStats, setPeriodStats] = useState<PeriodStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -54,18 +59,64 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
     load();
   }, [groupId, isStreaksMode]);
 
-  const sorted = [...members].sort((a, b) => {
-    if (metric === 'sessns') return (b.totalSessns ?? 0) - (a.totalSessns ?? 0);
-    if (metric === 'lbs') return (b.totalLbsLifted ?? 0) - (a.totalLbsLifted ?? 0);
-    return (b.totalTimeMinutes ?? 0) - (a.totalTimeMinutes ?? 0);
-  });
+  useEffect(() => {
+    if (timeFrame === 'alltime' || members.length === 0) { setPeriodStats(null); return; }
+    const now = new Date();
+    let start: Date;
+    if (timeFrame === 'weekly') {
+      const day = now.getDay();
+      start = new Date(now);
+      start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+      start.setHours(0, 0, 0, 0);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    const uids = members.map((m) => m.uid);
+    const chunks: string[][] = [];
+    for (let i = 0; i < uids.length; i += 30) chunks.push(uids.slice(i, i + 30));
+    Promise.all(
+      chunks.map((chunk) =>
+        getDocs(query(
+          collection(db, 'posts'),
+          where('authorId', 'in', chunk),
+          where('createdAt', '>=', Timestamp.fromDate(start)),
+        )),
+      ),
+    ).then((snaps) => {
+      const stats: PeriodStats = {};
+      snaps.flatMap((s) => s.docs).forEach((d) => {
+        const data = d.data();
+        if (data.isRepost) return;
+        const uid: string = data.authorId;
+        if (!stats[uid]) stats[uid] = { sessns: 0, lbs: 0, mins: 0 };
+        stats[uid].sessns += 1;
+        stats[uid].mins += data.durationMinutes ?? 0;
+        stats[uid].lbs += calcLbs(data.exercises);
+      });
+      setPeriodStats(stats);
+    });
+  }, [timeFrame, members]);
 
+  const getVal = (m: GroupMember, met: Metric): number => {
+    if (periodStats) {
+      const p = periodStats[m.uid] ?? { sessns: 0, lbs: 0, mins: 0 };
+      if (met === 'lbs') return p.lbs;
+      if (met === 'hrs') return p.mins;
+      return p.sessns;
+    }
+    if (met === 'lbs') return m.totalLbsLifted ?? 0;
+    if (met === 'hrs') return m.totalTimeMinutes ?? 0;
+    return m.totalSessns ?? 0;
+  };
+
+  const sorted = [...members].sort((a, b) => getVal(b, metric) - getVal(a, metric));
   const streakSorted = [...members].sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
 
   const getValue = (m: GroupMember) => {
-    if (metric === 'sessns') return `${m.totalSessns ?? 0} SESSNS`;
-    if (metric === 'lbs') return `${m.totalLbsLifted ?? 0} LBS`;
-    return `${Math.round((m.totalTimeMinutes ?? 0) / 60)} HRS`;
+    const val = getVal(m, metric);
+    if (metric === 'sessns') return `${val} SESSNS`;
+    if (metric === 'lbs') return `${Math.round(val)} LBS`;
+    return `${Math.round(val / 60)} HRS`;
   };
 
   const handleLeave = () => {
@@ -161,6 +212,21 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
         <TouchableOpacity onPress={() => setShowMenu(true)}>
           <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
         </TouchableOpacity>
+      </View>
+
+      {/* Time frame selector */}
+      <View style={styles.metricRow}>
+        {(['weekly', 'monthly', 'alltime'] as const).map((tf) => (
+          <TouchableOpacity
+            key={tf}
+            style={[styles.metricBtn, timeFrame === tf && styles.metricBtnActive]}
+            onPress={() => setTimeFrame(tf)}
+          >
+            <Text style={[styles.metricText, timeFrame === tf && styles.metricTextActive]}>
+              {tf === 'alltime' ? 'ALL TIME' : tf === 'monthly' ? 'MONTH' : 'WEEK'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Metric selector */}

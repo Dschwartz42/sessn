@@ -14,6 +14,7 @@ export async function createGroup(
 ): Promise<string> {
   const ref = await addDoc(collection(db, 'groups'), {
     name,
+    nameLower: name.toLowerCase(),
     isPrivate,
     ownerId,
     ownerUsername,

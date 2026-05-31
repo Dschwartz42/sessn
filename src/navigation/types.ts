@@ -24,7 +24,7 @@ export type SearchStackParamList = {
 
 export type CommunityStackParamList = {
   Community: undefined;
-  FullLeaderboard: { groupId?: string; type?: string };
+  FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
   CreateGroup: undefined;
@@ -46,6 +46,7 @@ export type ProfileStackParamList = {
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
+  FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
 };
 
 export type MainTabParamList = {

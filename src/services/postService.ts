@@ -1,5 +1,5 @@
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc, getDoc,
+  collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs,
   increment, serverTimestamp, setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -19,6 +19,16 @@ function localDateStr(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+function mondayOfWeek(date = new Date()): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
+  return localDateStr(d);
+}
+
+export { calcLbs };
+
 export async function createPost(data: Omit<Post, 'id' | 'likeCount' | 'repostCount' | 'saveCount' | 'createdAt'>): Promise<string> {
   const ref = await addDoc(collection(db, 'posts'), {
     ...data,
@@ -29,20 +39,20 @@ export async function createPost(data: Omit<Post, 'id' | 'likeCount' | 'repostCo
   });
 
   const lbs = calcLbs(data.exercises);
-  const today = localDateStr();
-  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return localDateStr(d); })();
+  const thisWeek = mondayOfWeek();
+  const prevWeek = mondayOfWeek(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
 
   const userRef = doc(db, 'users', data.authorId);
   const userSnap = await getDoc(userRef);
   const ud = userSnap.data() ?? {};
 
-  const lastDate: string | undefined = ud.lastStreakDate;
-  const alreadyLoggedToday = lastDate === today;
+  const lastStreakWeek: string | undefined = ud.lastStreakWeek;
+  const alreadyLoggedThisWeek = lastStreakWeek === thisWeek;
 
   let newStreak: number;
-  if (alreadyLoggedToday) {
+  if (alreadyLoggedThisWeek) {
     newStreak = ud.currentStreak ?? 1;
-  } else if (lastDate === yesterday) {
+  } else if (lastStreakWeek === prevWeek) {
     newStreak = (ud.currentStreak ?? 0) + 1;
   } else {
     newStreak = 1;
@@ -56,10 +66,10 @@ export async function createPost(data: Omit<Post, 'id' | 'likeCount' | 'repostCo
     totalLbsLifted: increment(lbs),
   };
 
-  if (!alreadyLoggedToday) {
+  if (!alreadyLoggedThisWeek) {
     userUpdate.currentStreak = newStreak;
     userUpdate.longestStreak = newLongest;
-    userUpdate.lastStreakDate = today;
+    userUpdate.lastStreakWeek = thisWeek;
   }
 
   await updateDoc(userRef, userUpdate);
@@ -103,6 +113,21 @@ export async function deletePost(postId: string, authorId: string, durationMinut
       }).catch(() => null),
     ),
   );
+}
+
+export async function getSavedWorkouts(uid: string) {
+  const snap = await getDocs(collection(db, 'users', uid, 'workouts'));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<{
+    id: string;
+    workoutTypes: Post['workoutTypes'];
+    split?: string;
+    durationMinutes: number;
+    exercises?: import('../types').Exercise[];
+    cardio?: Post['cardio'];
+    muscleGroups?: string[];
+    warmupDescription?: string;
+    workoutInstructions?: string;
+  }>;
 }
 
 export async function saveWorkoutTemplate(uid: string, data: {
