@@ -65,6 +65,13 @@ export default function StreakScreen({ navigation }: Props) {
 
   const monthName = today.toLocaleString('default', { month: 'long', year: 'numeric' });
 
+  // Date range for this week
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - todayIdx);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const weekRange = `${weekStart.toLocaleDateString('default', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('default', { month: 'short', day: 'numeric' })}`;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -93,7 +100,7 @@ export default function StreakScreen({ navigation }: Props) {
                 cx={110} cy={110} r={100}
                 fill="none"
                 stroke="rgba(255,255,255,0.06)"
-                strokeWidth={14}
+                strokeWidth={16}
                 transform="rotate(-90 110 110)"
               />
               {/* Progress arc */}
@@ -101,7 +108,7 @@ export default function StreakScreen({ navigation }: Props) {
                 cx={110} cy={110} r={100}
                 fill="none"
                 stroke="#FF8C42"
-                strokeWidth={14}
+                strokeWidth={16}
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={dashOffset}
@@ -122,7 +129,7 @@ export default function StreakScreen({ navigation }: Props) {
         {/* This Week */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>THIS WEEK</Text>
-          <Text style={styles.sectionSub}>Mon – Sun</Text>
+          <Text style={styles.sectionSub}>{weekRange}</Text>
         </View>
         <View style={styles.weekCard}>
           <View style={styles.weekRow}>
@@ -148,16 +155,16 @@ export default function StreakScreen({ navigation }: Props) {
           </View>
           <View style={styles.weekSummary}>
             <View style={styles.weekStat}>
+              <Text style={styles.weekStatValue}>{todayIdx}</Text>
+              <Text style={styles.weekStatLabel}>SESSNS THIS WEEK</Text>
+            </View>
+            <View style={styles.weekStat}>
               <Text style={styles.weekStatValue}>{Math.round(totalTime / 60)}H</Text>
-              <Text style={styles.weekStatLabel}>Total Time</Text>
+              <Text style={styles.weekStatLabel}>TOTAL TIME</Text>
             </View>
             <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{streak}</Text>
-              <Text style={styles.weekStatLabel}>Week Streak</Text>
-            </View>
-            <View style={styles.weekStat}>
-              <Text style={styles.weekStatValue}>{totalSessns}</Text>
-              <Text style={styles.weekStatLabel}>Total Sessns</Text>
+              <Text style={styles.weekStatValue}>{7 - todayIdx - 1}</Text>
+              <Text style={styles.weekStatLabel}>REST DAYS</Text>
             </View>
           </View>
         </View>
@@ -165,6 +172,7 @@ export default function StreakScreen({ navigation }: Props) {
         {/* Month Calendar */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>THIS MONTH</Text>
+          <Text style={styles.sectionSub}>{totalSessns} sessns</Text>
         </View>
         <View style={styles.monthCard}>
           <View style={styles.monthHeader}>
@@ -193,16 +201,16 @@ export default function StreakScreen({ navigation }: Props) {
           ))}
           <View style={styles.calLegend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendBox, { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder }]} />
+              <View style={[styles.legendBox, { backgroundColor: colors.primary }]} />
               <Text style={styles.legendText}>Active</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendBox, { backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.primary }]} />
+              <Text style={styles.legendText}>Today</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendBox, { backgroundColor: 'rgba(255,255,255,0.06)' }]} />
               <Text style={styles.legendText}>Rest</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendBox, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#fff' }]} />
-              <Text style={styles.legendText}>Today</Text>
             </View>
           </View>
         </View>
@@ -254,128 +262,145 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 26, letterSpacing: 2, color: '#fff' },
   content: { paddingBottom: 120 },
 
-  ringContainer: { alignItems: 'center', paddingVertical: 20 },
+  ringContainer: { alignItems: 'center', paddingVertical: 24 },
   ringWrap: { width: 220, height: 220, position: 'relative', alignItems: 'center', justifyContent: 'center' },
   ringCenter: {
     position: 'absolute', inset: 0,
     alignItems: 'center', justifyContent: 'center',
   },
-  ringFlame: { fontSize: 36, marginBottom: 2 },
+  ringFlame: { fontSize: 28, marginBottom: 2 },
   ringNumber: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 56, letterSpacing: 2, lineHeight: 56,
+    fontSize: 80, lineHeight: 80,
     color: '#FF8C42',
   },
   ringLabel: {
-    fontFamily: 'Barlow_700Bold', fontSize: 11,
-    textTransform: 'uppercase', letterSpacing: 2,
-    color: 'rgba(255,255,255,0.45)', marginTop: 2,
+    fontFamily: 'Barlow_700Bold', fontSize: 14,
+    textTransform: 'uppercase', letterSpacing: 1,
+    color: 'rgba(255,255,255,0.5)', marginTop: 4,
   },
   streakTagline: {
     textAlign: 'center',
     fontFamily: 'Barlow_400Regular',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.55)',
-    paddingHorizontal: 20,
-    marginTop: 4,
+    color: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
 
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12,
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10,
   },
-  sectionTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 20, letterSpacing: 1.5, color: '#fff' },
-  sectionSub: { fontFamily: 'Barlow_600SemiBold', fontSize: 11, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 1.2 },
+  sectionTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 22, letterSpacing: 1.5, color: '#fff' },
+  sectionSub: { fontFamily: 'Barlow_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.4)' },
 
   weekCard: {
     marginHorizontal: 16,
     marginBottom: 20,
     backgroundColor: '#151515',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 18, padding: 18,
+    borderRadius: 16, padding: 20,
   },
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   weekDay: { flex: 1, alignItems: 'center', gap: 8 },
-  weekDayLabel: { fontFamily: 'Barlow_700Bold', fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.8 },
+  weekDayLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   weekDot: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    borderStyle: 'dashed',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   weekDotDone: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    borderStyle: 'solid',
   },
   weekDotToday: {
     backgroundColor: 'transparent',
-    borderColor: colors.primary,
-    borderStyle: 'solid',
     borderWidth: 2,
+    borderColor: colors.primary,
   },
   weekDotUpcoming: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderStyle: 'dashed',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   weekDotCheck: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
   weekDotTodayText: { color: colors.primaryLight, fontSize: 20, fontFamily: 'Barlow_700Bold' },
   weekSummary: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 16,
-    paddingTop: 14,
+    marginTop: 20,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
   },
   weekStat: { alignItems: 'center' },
-  weekStatValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 22, letterSpacing: 0.5, color: '#fff' },
-  weekStatLabel: { fontFamily: 'Barlow_700Bold', fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 1.2, marginTop: 2 },
+  weekStatValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 24, letterSpacing: 0.5, color: '#fff' },
+  weekStatLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 3,
+    textAlign: 'center',
+  },
 
   monthCard: {
     marginHorizontal: 16, marginBottom: 20,
     backgroundColor: '#151515',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 18, padding: 18,
+    borderRadius: 16, padding: 16,
   },
   monthHeader: { marginBottom: 16 },
-  monthTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 20, letterSpacing: 1, color: '#fff' },
+  monthTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 22, letterSpacing: 1, color: '#fff' },
   calWeekdays: { flexDirection: 'row', marginBottom: 8 },
-  calWeekday: { flex: 1, textAlign: 'center', fontFamily: 'Barlow_700Bold', fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8 },
-  calRow: { flexDirection: 'row', gap: 6, marginBottom: 6 },
+  calWeekday: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.35)',
+    textTransform: 'uppercase',
+  },
+  calRow: { flexDirection: 'row', gap: 4, marginBottom: 4 },
   calCell: {
     flex: 1, aspectRatio: 1,
     alignItems: 'center', justifyContent: 'center',
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   calCellBlank: { backgroundColor: 'transparent' },
-  calCellToday: { borderWidth: 2, borderColor: '#fff', backgroundColor: 'transparent' },
-  calCellText: { fontFamily: 'Barlow_600SemiBold', fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  calCellToday: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
+  },
+  calCellText: { fontFamily: 'Barlow_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   calLegend: {
     flexDirection: 'row', gap: 16,
-    marginTop: 14, paddingTop: 12,
+    marginTop: 12, paddingTop: 12,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendBox: { width: 12, height: 12, borderRadius: 4 },
-  legendText: { fontFamily: 'Barlow_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.4)' },
+  legendText: { fontFamily: 'Barlow_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.4)' },
 
   milestonesCard: {
     marginHorizontal: 16, marginBottom: 20,
     backgroundColor: '#151515',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 18, padding: 16,
+    borderRadius: 16, padding: 16,
   },
   milestoneRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   milestoneIcon: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
   milestoneIconDone: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder },
@@ -384,7 +409,7 @@ const styles = StyleSheet.create({
   milestoneName: { fontFamily: 'Barlow_700Bold', fontSize: 13, color: '#fff' },
   milestoneNameLocked: { color: 'rgba(255,255,255,0.4)' },
   milestoneDesc: { fontFamily: 'Barlow_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
-  milestoneStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  milestoneStatus: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   milestoneStatusDone: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder },
   milestoneStatusPending: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
   milestoneStatusText: { fontFamily: 'Barlow_700Bold', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8 },

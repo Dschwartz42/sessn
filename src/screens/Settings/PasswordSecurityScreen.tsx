@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, spacing, typography, radius } from '../../utils/theme';
+import { colors, spacing } from '../../utils/theme';
 
 type Props = { navigation: any };
 
@@ -38,50 +38,74 @@ export default function PasswordSecurityScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Password & Security</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>PASSWORD & SECURITY</Text>
+        <View style={{ width: 40 }} />
       </View>
-      <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
-        <Text style={typography.h3}>Change Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Current password"
-          placeholderTextColor={colors.textDim}
-          value={currentPw}
-          onChangeText={setCurrentPw}
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="New password"
-          placeholderTextColor={colors.textDim}
-          value={newPw}
-          onChangeText={setNewPw}
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm new password"
-          placeholderTextColor={colors.textDim}
-          value={confirmPw}
-          onChangeText={setConfirmPw}
-          secureTextEntry
-        />
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionHeader}>CHANGE PASSWORD</Text>
+        <View style={styles.card}>
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>CURRENT PASSWORD</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textDim}
+              value={currentPw}
+              onChangeText={setCurrentPw}
+              secureTextEntry
+            />
+          </View>
+          <View style={[styles.inputWrap, styles.inputWrapBorder]}>
+            <Text style={styles.inputLabel}>NEW PASSWORD</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textDim}
+              value={newPw}
+              onChangeText={setNewPw}
+              secureTextEntry
+            />
+          </View>
+          <View style={[styles.inputWrap, styles.inputWrapBorder]}>
+            <Text style={styles.inputLabel}>CONFIRM NEW PASSWORD</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textDim}
+              value={confirmPw}
+              onChangeText={setConfirmPw}
+              secureTextEntry
+            />
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.btn} onPress={handleChangePassword} disabled={loading}>
-          {loading ? <ActivityIndicator color={colors.text} /> : <Text style={styles.btnText}>Update Password</Text>}
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>UPDATE PASSWORD</Text>
+          )}
         </TouchableOpacity>
 
-        <Text style={[typography.h3, { marginTop: spacing.lg }]}>Two-Factor Authentication</Text>
-        <Text style={typography.bodySecondary}>
-          Enable 2FA for additional account security. When logging in, you'll also need to verify via SMS.
-        </Text>
-        <View style={styles.row}>
-          <Text style={styles.label}>Enable 2FA</Text>
-          <Switch trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.text} value={false} />
+        <Text style={[styles.sectionHeader, { marginTop: 24 }]}>TWO-FACTOR AUTHENTICATION</Text>
+        <View style={styles.card}>
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Enable 2FA</Text>
+              <Text style={styles.toggleDesc}>Verify via SMS when logging in</Text>
+            </View>
+            <Switch
+              trackColor={{ false: 'rgba(255,255,255,0.06)', true: colors.primary }}
+              thumbColor={colors.text}
+              value={false}
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -94,34 +118,91 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { ...typography.h3 },
-  input: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22,
+    letterSpacing: 2,
     color: colors.text,
-    fontSize: 15,
+  },
+  content: { padding: 16, gap: 12, paddingBottom: 120 },
+  sectionHeader: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  card: {
+    backgroundColor: '#151515',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  inputWrap: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  inputWrapBorder: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  inputLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  input: {
+    color: colors.text,
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 15,
+    paddingVertical: 0,
   },
   btn: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  btnText: { color: colors.text, fontWeight: '700', fontSize: 15 },
-  row: {
+  btnText: {
+    color: '#fff',
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 20,
+    letterSpacing: 2,
+  },
+  toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 12,
   },
-  label: { color: colors.text, fontSize: 15 },
+  toggleLabel: {
+    color: colors.text,
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 15,
+  },
+  toggleDesc: {
+    color: 'rgba(255,255,255,0.4)',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    marginTop: 2,
+  },
 });

@@ -14,7 +14,7 @@ export default function WelcomeScreen({ navigation }: Props) {
       <View style={styles.inner}>
         <View style={styles.logoSection}>
           <Text style={styles.logoText}>SESSN</Text>
-          <Text style={styles.tagline}>Every workout deserves a post.</Text>
+          <Text style={styles.tagline}>Track every rep. Share every sessn.</Text>
         </View>
 
         <View style={styles.buttons}>
@@ -22,21 +22,22 @@ export default function WelcomeScreen({ navigation }: Props) {
             style={styles.primaryButton}
             onPress={() => navigation.navigate('Signup')}
           >
-            <Text style={styles.primaryButtonText}>Get Started</Text>
+            <Text style={styles.primaryButtonText}>GET STARTED</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryButton}
+            style={styles.linkRow}
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={styles.secondaryButtonText}>Log In</Text>
+            <Text style={styles.linkText}>Already have an account? </Text>
+            <Text style={styles.linkHighlight}>Log in</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.ghostButton}
+            style={styles.phoneButton}
             onPress={() => navigation.navigate('PhoneAuth')}
           >
-            <Text style={styles.ghostButtonText}>Continue with Phone</Text>
+            <Text style={styles.phoneButtonText}>Continue with Phone</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -61,48 +62,52 @@ const styles = StyleSheet.create({
   logoText: {
     fontFamily: 'BebasNeue_400Regular',
     fontSize: 72,
-    color: colors.text,
-    letterSpacing: 12,
+    color: colors.primaryLight,
+    letterSpacing: 8,
   },
   tagline: {
     fontFamily: 'Barlow_400Regular',
     fontSize: 16,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.5)',
     marginTop: spacing.sm,
-    letterSpacing: 0.5,
+    textAlign: 'center',
   },
-  buttons: { gap: 12 },
+  buttons: { gap: 14 },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 17,
+    borderRadius: 14,
+    height: 56,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButtonText: {
     color: '#fff',
-    fontFamily: 'Barlow_700Bold',
-    fontSize: 16,
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 24,
+    letterSpacing: 2,
   },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderRadius: radius.pill,
-    paddingVertical: 17,
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderMedium,
   },
-  secondaryButtonText: {
-    color: colors.text,
+  linkText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 14,
+  },
+  linkHighlight: {
+    color: colors.primaryLight,
     fontFamily: 'Barlow_600SemiBold',
-    fontSize: 16,
+    fontSize: 14,
   },
-  ghostButton: {
-    paddingVertical: 14,
+  phoneButton: {
     alignItems: 'center',
+    paddingVertical: 10,
   },
-  ghostButtonText: {
-    color: colors.textSecondary,
+  phoneButtonText: {
+    color: 'rgba(255,255,255,0.4)',
     fontFamily: 'Barlow_500Medium',
-    fontSize: 15,
+    fontSize: 14,
   },
 });

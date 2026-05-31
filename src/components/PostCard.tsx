@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { Post } from '../types';
-import { colors, spacing, radius } from '../utils/theme';
+import { colors } from '../utils/theme';
 import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../services/postService';
+import { followUser, unfollowUser, isFollowing } from '../services/followService';
 import ShareSheet from './ShareSheet';
 import WorkoutDetailsPanel from './WorkoutDetailsPanel';
 
@@ -22,15 +24,19 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
   const { user, userDoc } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(post.repostCount ?? 0);
   const [showDetails, setShowDetails] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
+  const isOwn = post.authorId === user?.uid;
+
   useEffect(() => {
     if (!user) return;
     isLiked(post.id, user.uid).then(setLiked);
     isSaved(post.id, user.uid).then(setSaved);
+    if (!isOwn) isFollowing(user.uid, post.authorId).then(setFollowing);
   }, [post.id, user?.uid]);
 
   const handleLike = async () => {
@@ -53,13 +59,31 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
     ]);
   };
 
-  const splitLabel = post.type === 'class' ? post.classType : (post.split ?? post.workoutTypes?.[0] ?? 'Workout');
+  const handleFollow = async () => {
+    if (!user) return;
+    if (following) { await unfollowUser(user.uid, post.authorId); setFollowing(false); }
+    else { await followUser(user.uid, post.authorId); setFollowing(true); }
+  };
+
+  const splitLabel = post.type === 'class'
+    ? post.classType
+    : (post.split ?? post.workoutTypes?.[0] ?? 'Workout');
+  const splitLabelKey = post.type === 'class' ? 'Class Type' : 'Split';
+
   const dateStr = post.createdAt?.toDate
     ? post.createdAt.toDate().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })
     : '';
 
   return (
     <View style={styles.card}>
+      {/* Repost header */}
+      {post.isRepost && post.originalAuthorUsername && (
+        <View style={styles.repostHeader}>
+          <Ionicons name="repeat" size={13} color="rgba(255,255,255,0.4)" />
+          <Text style={styles.repostText}>Reposted by {post.originalAuthorUsername}</Text>
+        </View>
+      )}
+
       {/* Image with gradient overlay */}
       <TouchableOpacity onPress={onPress} activeOpacity={0.97} style={styles.imageContainer}>
         {post.imageUrl ? (
@@ -69,9 +93,11 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
             <Ionicons name="barbell-outline" size={48} color={colors.textDim} />
           </View>
         )}
-        {/* Gradient overlay — dark at bottom */}
-        <View style={styles.imageGradient} />
-        {/* Overlaid content at bottom of image */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.85)']}
+          locations={[0, 0.35, 0.7, 1]}
+          style={styles.imageGradient}
+        />
         <View style={styles.imageOverlayContent}>
           {post.location?.name ? (
             <View style={styles.locationPill}>
@@ -85,8 +111,19 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
 
       {/* Username + date row */}
       <View style={styles.usernameRow}>
-        <TouchableOpacity onPress={onUserPress}>
+        <TouchableOpacity onPress={onUserPress} style={styles.usernameLeft}>
           <Text style={styles.username}>{post.authorUsername}</Text>
+          {!isOwn && (
+            <TouchableOpacity
+              style={[styles.followBtn, following && styles.followingBtn]}
+              onPress={handleFollow}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            >
+              <Text style={[styles.followBtnText, following && styles.followingBtnText]}>
+                {following ? 'Following' : 'Follow'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </TouchableOpacity>
         <Text style={styles.dateText}>{dateStr}</Text>
       </View>
@@ -95,8 +132,8 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
       <View style={styles.statsRow}>
         {splitLabel ? (
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Split</Text>
-            <Text style={styles.statValue}>{splitLabel.toUpperCase()}</Text>
+            <Text style={styles.statLabel}>{splitLabelKey}</Text>
+            <Text style={styles.statValue}>{String(splitLabel).toUpperCase()}</Text>
           </View>
         ) : null}
         <View style={styles.statItem}>
@@ -119,7 +156,9 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
             size={20}
             color={liked ? '#FF4D6A' : 'rgba(255,255,255,0.45)'}
           />
-          {likeCount > 0 && <Text style={[styles.actionCount, liked && styles.actionCountLiked]}>{likeCount}</Text>}
+          {likeCount > 0 && (
+            <Text style={[styles.actionCount, liked && styles.actionCountLiked]}>{likeCount}</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.action} onPress={handleRepost}>
@@ -170,25 +209,44 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
   },
+
+  // Repost header
+  repostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  repostText: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+  },
+
+  // Image
   imageContainer: { position: 'relative', height: 300, width: '100%' },
-  image: { width: '100%', height: '100%', resizeMode: 'cover' },
+  image: { position: 'absolute', width: '100%', height: '100%', resizeMode: 'cover' },
   imagePlaceholder: {
     backgroundColor: colors.surfaceElevated,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imageGradient: {
     position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    height: '65%',
-    // RN can't do CSS gradients — simulate with semi-transparent overlay
-    backgroundColor: 'rgba(0,0,0,0)',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '75%',
   },
   imageOverlayContent: {
     position: 'absolute',
-    bottom: 0, left: 0, right: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 16,
-    // dark overlay fade
-    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   locationPill: {
     flexDirection: 'row',
@@ -201,7 +259,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  locationText: { color: 'rgba(255,255,255,0.75)', fontFamily: 'Barlow_500Medium', fontSize: 11 },
+  locationText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 11,
+  },
   workoutTitle: {
     fontFamily: 'BebasNeue_400Regular',
     fontSize: 26,
@@ -211,6 +273,8 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
+
+  // Username row
   usernameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -219,8 +283,43 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 0,
   },
-  username: { fontFamily: 'Barlow_600SemiBold', fontSize: 13, color: 'rgba(255,255,255,0.7)' },
-  dateText: { fontFamily: 'Barlow_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.35)' },
+  usernameLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  username: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  followBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  followingBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.35)',
+  },
+  followBtnText: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 11,
+    color: '#fff',
+  },
+  followingBtnText: {
+    color: colors.primaryLight,
+  },
+  dateText: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.35)',
+  },
+
+  // Stats
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -244,6 +343,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.5,
   },
+
+  // Actions
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,9 +355,15 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionCount: { fontFamily: 'Barlow_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.45)' },
+  actionCount: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.45)',
+  },
   actionCountLiked: { color: '#FF4D6A' },
   saveAction: { marginLeft: 'auto' },
+
+  // Caption
   caption: {
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -265,6 +372,8 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
     lineHeight: 19,
   },
+
+  // Tap hint
   tapHint: {
     alignItems: 'center',
     paddingVertical: 12,

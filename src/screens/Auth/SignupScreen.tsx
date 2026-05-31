@@ -94,28 +94,39 @@ export default function SignupScreen({ navigation }: Props) {
     }
   };
 
+  const fields = [
+    { label: 'FULL NAME', value: displayName, setter: setDisplayName, placeholder: 'Your name', caps: 'words' as const },
+    { label: 'USERNAME', value: username, setter: setUsername, placeholder: '@username', caps: 'none' as const },
+    { label: 'EMAIL', value: email, setter: setEmail, placeholder: 'you@example.com', caps: 'none' as const, keyboard: 'email-address' as const },
+    { label: 'PASSWORD', value: password, setter: setPassword, placeholder: '••••••••', secure: true },
+    { label: 'CONFIRM PASSWORD', value: confirmPassword, setter: setConfirmPassword, placeholder: '••••••••', secure: true },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Back button */}
           <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Create Account</Text>
+          {/* Logo */}
+          <Text style={styles.logo}>SESSN</Text>
+
+          {/* Heading */}
+          <Text style={styles.title}>CREATE ACCOUNT</Text>
           <Text style={styles.subtitle}>Join the Sessn community</Text>
 
           <View style={styles.form}>
-            {[
-              { label: 'Full Name', value: displayName, setter: setDisplayName, placeholder: 'Your name', caps: 'words' as const },
-              { label: 'Username', value: username, setter: setUsername, placeholder: '@username', caps: 'none' as const },
-              { label: 'Email', value: email, setter: setEmail, placeholder: 'you@example.com', caps: 'none' as const, keyboard: 'email-address' as const },
-              { label: 'Password', value: password, setter: setPassword, placeholder: '••••••••', secure: true },
-              { label: 'Confirm Password', value: confirmPassword, setter: setConfirmPassword, placeholder: '••••••••', secure: true },
-            ].map((field) => (
+            {fields.map((field) => (
               <View key={field.label} style={styles.inputWrap}>
                 <Text style={styles.inputLabel}>{field.label}</Text>
                 <TextInput
@@ -135,7 +146,7 @@ export default function SignupScreen({ navigation }: Props) {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.primaryButtonText}>Create Account</Text>
+                <Text style={styles.primaryButtonText}>CREATE ACCOUNT</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -155,11 +166,28 @@ export default function SignupScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  inner: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
-  back: { marginTop: spacing.md, marginBottom: spacing.xl },
+  inner: { paddingHorizontal: 24, paddingBottom: spacing.xxl },
+  back: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 42,
+    color: colors.primaryLight,
+    letterSpacing: 4,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
   title: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 40,
+    fontSize: 36,
     color: colors.text,
     letterSpacing: 2,
     marginBottom: 6,
@@ -167,38 +195,44 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: 'Barlow_400Regular',
     fontSize: 16,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: spacing.xl,
   },
   form: { gap: spacing.md },
   inputWrap: { gap: 6 },
   inputLabel: {
     fontFamily: 'Barlow_600SemiBold',
-    fontSize: 11,
-    color: colors.textDim,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.3)',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
   input: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: radius.sm,
+    backgroundColor: '#151515',
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 14,
+    paddingVertical: 16,
     color: colors.text,
     fontFamily: 'Barlow_400Regular',
     fontSize: 15,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 17,
+    borderRadius: 14,
+    height: 54,
     alignItems: 'center',
-    marginTop: spacing.sm,
+    justifyContent: 'center',
+    marginTop: 8,
   },
-  primaryButtonText: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 16 },
+  primaryButtonText: {
+    color: '#fff',
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22,
+    letterSpacing: 2,
+  },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
-  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 15, color: colors.textSecondary },
-  footerLink: { color: colors.primary, fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
+  footerText: { fontFamily: 'Barlow_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  footerLink: { color: colors.primaryLight, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
 });

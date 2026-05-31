@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, spacing, typography } from '../../utils/theme';
+import { colors, spacing } from '../../utils/theme';
 import { format } from 'date-fns';
 
 type Props = { navigation: any };
@@ -23,23 +23,32 @@ export default function YourActivityScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Activity</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>YOUR ACTIVITY</Text>
+        <View style={{ width: 40 }} />
       </View>
-      <ScrollView>
-        {stats.map((s) => (
-          <View key={s.label} style={styles.row}>
-            <Text style={styles.label}>{s.label}</Text>
-            <Text style={styles.value}>{s.value}</Text>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <Text style={styles.sectionHeader}>STATS</Text>
+        <View style={styles.card}>
+          {stats.map((s, idx) => (
+            <View key={s.label} style={[styles.row, idx < stats.length - 1 && styles.rowBorder]}>
+              <Text style={styles.label}>{s.label}</Text>
+              <Text style={styles.value}>{s.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={[styles.sectionHeader, { marginTop: 24 }]}>LIKED POSTS</Text>
+        <View style={styles.card}>
+          <View style={styles.comingSoonWrap}>
+            <Ionicons name="heart-outline" size={28} color="rgba(255,255,255,0.2)" />
+            <Text style={styles.comingSoonText}>Coming soon — tap posts to see your liked content.</Text>
           </View>
-        ))}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Liked Posts</Text>
-          <Text style={styles.comingSoon}>Coming soon — tap posts to see your liked content.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -52,23 +61,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { ...typography.h3 },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    letterSpacing: 2,
+    color: colors.text,
+  },
+  content: { padding: 16, paddingBottom: 120 },
+  sectionHeader: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  card: {
+    backgroundColor: '#151515',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
-  label: { color: colors.textSecondary, fontSize: 15 },
-  value: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  section: { padding: spacing.md },
-  sectionTitle: { ...typography.h3, marginBottom: spacing.sm },
-  comingSoon: { color: colors.textSecondary, fontSize: 14 },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  label: { color: 'rgba(255,255,255,0.5)', fontFamily: 'Barlow_400Regular', fontSize: 15 },
+  value: { color: colors.text, fontFamily: 'Barlow_700Bold', fontSize: 15 },
+  comingSoonWrap: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 10,
+    paddingHorizontal: 20,
+  },
+  comingSoonText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+  },
 });

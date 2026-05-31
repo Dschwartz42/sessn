@@ -10,11 +10,19 @@ import {
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Notification } from '../../types';
-import { colors, typography, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 import { followUser, unfollowUser, isFollowing } from '../../services/followService';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
 
 type Props = { navigation: any };
+
+function getGroup(item: Notification): 'Today' | 'This Week' | 'Earlier' {
+  if (!item.createdAt?.toDate) return 'Earlier';
+  const d = item.createdAt.toDate();
+  if (isToday(d)) return 'Today';
+  if (isThisWeek(d)) return 'This Week';
+  return 'Earlier';
+}
 
 export default function NotificationsScreen({ navigation }: Props) {
   const { user } = useAuth();
@@ -38,32 +46,61 @@ export default function NotificationsScreen({ navigation }: Props) {
     return unsub;
   }, [user]);
 
-  const renderNotif = ({ item }: { item: Notification }) => (
-    <NotifItem item={item} navigation={navigation} currentUid={user?.uid ?? ''} />
-  );
+  // Group notifs
+  type GroupedItem = { type: 'header'; title: string } | { type: 'notif'; item: Notification };
+  const grouped: GroupedItem[] = [];
+  let lastGroup = '';
+  notifs.forEach((n) => {
+    const g = getGroup(n);
+    if (g !== lastGroup) {
+      grouped.push({ type: 'header', title: g });
+      lastGroup = g;
+    }
+    grouped.push({ type: 'notif', item: n });
+  });
+
+  const renderItem = ({ item }: { item: GroupedItem }) => {
+    if (item.type === 'header') {
+      return <Text style={styles.sectionLabel}>{item.title}</Text>;
+    }
+    return (
+      <NotifItem
+        item={item.item}
+        navigation={navigation}
+        currentUid={user?.uid ?? ''}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>NOTIFICATIONS</Text>
+        <View style={styles.bellWrap}>
+          <Ionicons name="notifications-outline" size={20} color={colors.textDim} />
+        </View>
       </View>
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
       ) : notifs.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={typography.bodySecondary}>No notifications yet.</Text>
+          <Ionicons name="notifications-outline" size={48} color={colors.textDim} />
+          <Text style={styles.emptyText}>No notifications yet.</Text>
         </View>
       ) : (
         <FlatList
-          data={notifs}
-          keyExtractor={(item) => item.id}
-          renderItem={renderNotif}
+          data={grouped}
+          keyExtractor={(item, idx) =>
+            item.type === 'header' ? `header-${item.title}` : item.item.id
+          }
+          renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 120 }}
         />
       )}
     </SafeAreaView>
@@ -101,34 +138,47 @@ function NotifItem({ item, navigation, currentUid }: { item: Notification; navig
     ? formatDistanceToNow(item.createdAt.toDate(), { addSuffix: true })
     : '';
 
+  const isUnread = !item.read;
+
   return (
-    <View style={[styles.notifRow, !item.read && styles.unread]}>
+    <View style={[styles.notifRow, isUnread && styles.unread]}>
+      {isUnread && <View style={styles.unreadBar} />}
       <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { uid: item.fromUserId })}>
         {item.fromUserPic ? (
           <Image source={{ uri: item.fromUserPic }} style={styles.avatar} />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={18} color={colors.textSecondary} />
+          <View style={[styles.avatar, styles.avatarPlaceholder, isUnread && styles.avatarUnread]}>
+            <Text style={styles.avatarInitials}>
+              {(item.fromUsername ?? '?').slice(0, 2).toUpperCase()}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
 
       <View style={styles.notifBody}>
         <Text style={styles.notifText}>
-          <Text style={styles.username} onPress={() => navigation.navigate('UserProfile', { uid: item.fromUserId })}>
+          <Text
+            style={styles.notifUsername}
+            onPress={() => navigation.navigate('UserProfile', { uid: item.fromUserId })}
+          >
             {item.fromUsername}
           </Text>
-          {' '}{message()}{' '}
-          <Text style={styles.timeAgo}>{timeAgo}</Text>
+          {' '}{message()}
         </Text>
+        <Text style={styles.timeAgo}>{timeAgo}</Text>
       </View>
 
       {item.type === 'follow_request' && (
         <TouchableOpacity
-          style={[styles.followBtn, followState === 'following' && styles.followingBtn]}
+          style={[
+            styles.followBtn,
+            followState === 'following' && styles.followingBtn,
+          ]}
           onPress={handleFollowBack}
         >
-          <Text style={styles.followBtnText}>{followState === 'following' ? 'Following' : 'Follow Back'}</Text>
+          <Text style={[styles.followBtnText, followState === 'following' && styles.followingBtnText]}>
+            {followState === 'following' ? 'Following' : 'Follow Back'}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -147,39 +197,115 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { fontFamily: 'Barlow_600SemiBold', fontSize: 17, color: colors.text },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    letterSpacing: 2,
+    color: colors.text,
+  },
+  bellWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionLabel: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  emptyText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 15,
+  },
   notifRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    position: 'relative',
   },
-  unread: { backgroundColor: colors.primarySoft },
+  unread: {
+    backgroundColor: 'rgba(99,91,255,0.06)',
+  },
+  unreadBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: colors.primary,
+  },
   avatar: { width: 44, height: 44, borderRadius: 22 },
   avatarPlaceholder: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: colors.surfaceElevated,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarUnread: {
+    backgroundColor: colors.primary,
+  },
+  avatarInitials: {
+    color: '#fff',
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 14,
   },
   notifBody: { flex: 1 },
-  notifText: { color: colors.text, fontFamily: 'Barlow_400Regular', fontSize: 14, lineHeight: 20 },
-  username: { fontFamily: 'Barlow_700Bold' },
-  timeAgo: { color: colors.textSecondary, fontFamily: 'Barlow_400Regular', fontSize: 12 },
+  notifText: {
+    color: colors.text,
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  notifUsername: { fontFamily: 'Barlow_700Bold' },
+  timeAgo: {
+    color: 'rgba(255,255,255,0.4)',
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 12,
+    marginTop: 4,
+  },
   followBtn: {
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
-  followingBtn: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder },
-  followBtnText: { color: '#fff', fontFamily: 'Barlow_600SemiBold', fontSize: 13 },
-  postThumb: { width: 44, height: 44, borderRadius: radius.xs },
+  followingBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.35)',
+  },
+  followBtnText: {
+    color: '#fff',
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 12,
+  },
+  followingBtnText: {
+    color: colors.primaryLight,
+  },
+  postThumb: { width: 44, height: 44, borderRadius: 8 },
 });

@@ -8,16 +8,31 @@ import { colors, spacing, radius } from '../../utils/theme';
 
 type Props = { navigation: any };
 
-const SETTINGS_ITEMS = [
-  { key: 'PersonalDetails', label: 'Personal Details', icon: 'person-outline' },
-  { key: 'PasswordSecurity', label: 'Password & Security', icon: 'lock-closed-outline' },
-  { key: 'NotificationsSettings', label: 'Notifications', icon: 'notifications-outline' },
-  { key: 'AccountPrivacy', label: 'Account Privacy', icon: 'eye-outline' },
-  { key: 'BlockedUsers', label: 'Blocked Users', icon: 'ban-outline' },
-  { key: 'YourActivity', label: 'Your Activity', icon: 'bar-chart-outline' },
-  { key: 'RepostsSettings', label: 'Reposts', icon: 'repeat-outline' },
-  { key: 'HelpCenter', label: 'Help Center', icon: 'help-circle-outline' },
-  { key: 'AboutSessn', label: 'About Sessn', icon: 'information-circle-outline' },
+const SETTINGS_SECTIONS = [
+  {
+    title: 'ACCOUNT',
+    items: [
+      { key: 'PersonalDetails', label: 'Personal Details', icon: 'person-outline' },
+      { key: 'PasswordSecurity', label: 'Password & Security', icon: 'lock-closed-outline' },
+      { key: 'AccountPrivacy', label: 'Account Privacy', icon: 'eye-outline' },
+    ],
+  },
+  {
+    title: 'ACTIVITY',
+    items: [
+      { key: 'NotificationsSettings', label: 'Notifications', icon: 'notifications-outline' },
+      { key: 'BlockedUsers', label: 'Blocked Users', icon: 'ban-outline' },
+      { key: 'YourActivity', label: 'Your Activity', icon: 'bar-chart-outline' },
+      { key: 'RepostsSettings', label: 'Reposts', icon: 'repeat-outline' },
+    ],
+  },
+  {
+    title: 'SUPPORT',
+    items: [
+      { key: 'HelpCenter', label: 'Help Center', icon: 'help-circle-outline' },
+      { key: 'AboutSessn', label: 'About Sessn', icon: 'information-circle-outline' },
+    ],
+  },
 ] as const;
 
 export default function SettingsScreen({ navigation }: Props) {
@@ -32,30 +47,39 @@ export default function SettingsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>SETTINGS</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          {SETTINGS_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={styles.row}
-              onPress={() => navigation.navigate(item.key)}
-            >
-              <View style={styles.rowIcon}>
-                <Ionicons name={item.icon as any} size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.rowLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textDim} />
-            </TouchableOpacity>
-          ))}
-        </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        {SETTINGS_SECTIONS.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+            <View style={styles.sectionCard}>
+              {section.items.map((item, idx) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.row,
+                    idx < section.items.length - 1 && styles.rowBorder,
+                  ]}
+                  onPress={() => navigation.navigate(item.key)}
+                >
+                  <View style={styles.rowIcon}>
+                    <Ionicons name={item.icon as any} size={18} color={colors.primary} />
+                  </View>
+                  <Text style={styles.rowLabel}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Log Out</Text>
@@ -71,37 +95,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontFamily: 'Barlow_600SemiBold',
-    fontSize: 17,
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    letterSpacing: 2,
     color: colors.text,
   },
-  section: {
-    marginTop: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    marginHorizontal: spacing.md,
-    overflow: 'hidden',
+  section: { marginTop: 20, paddingHorizontal: 16 },
+  sectionHeader: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  sectionCard: {
+    backgroundColor: '#151515',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     paddingVertical: 15,
+    gap: 14,
+  },
+  rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: spacing.md,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   rowIcon: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 10,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
@@ -109,13 +151,14 @@ const styles = StyleSheet.create({
   },
   rowLabel: { flex: 1, color: colors.text, fontFamily: 'Barlow_500Medium', fontSize: 15 },
   logoutBtn: {
-    margin: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    marginHorizontal: 16,
+    marginTop: 24,
+    backgroundColor: '#151515',
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(232, 72, 85, 0.3)',
+    borderColor: 'rgba(232,72,85,0.3)',
   },
   logoutText: { color: colors.red, fontFamily: 'Barlow_700Bold', fontSize: 15 },
 });
