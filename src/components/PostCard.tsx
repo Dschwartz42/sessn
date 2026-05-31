@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Post } from '../types';
 import { colors } from '../utils/theme';
 import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost, deletePost } from '../services/postService';
-import { followUser, unfollowUser, isFollowing } from '../services/followService';
+import { followUser, unfollowUser, isFollowing, requestFollow, isPendingRequest, cancelFollowRequest } from '../services/followService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import ShareSheet from './ShareSheet';
@@ -28,6 +28,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [requestPending, setRequestPending] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(post.repostCount ?? 0);
   const [showDetails, setShowDetails] = useState(false);
@@ -39,7 +40,10 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
     if (!user) return;
     isLiked(post.id, user.uid).then(setLiked);
     isSaved(post.id, user.uid).then(setSaved);
-    if (!isOwn) isFollowing(user.uid, post.authorId).then(setFollowing);
+    if (!isOwn) {
+      isFollowing(user.uid, post.authorId).then(setFollowing);
+      isPendingRequest(user.uid, post.authorId).then(setRequestPending);
+    }
   }, [post.id, user?.uid]);
 
   const handleLike = async () => {
@@ -94,8 +98,23 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
 
   const handleFollow = async () => {
     if (!user) return;
-    if (following) { await unfollowUser(user.uid, post.authorId); setFollowing(false); }
-    else { await followUser(user.uid, post.authorId); setFollowing(true); }
+    if (following) {
+      await unfollowUser(user.uid, post.authorId);
+      setFollowing(false);
+    } else if (requestPending) {
+      await cancelFollowRequest(user.uid, post.authorId);
+      setRequestPending(false);
+    } else {
+      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
+      const isPublic = authorSnap.data()?.isPublic !== false;
+      if (isPublic) {
+        await followUser(user.uid, post.authorId);
+        setFollowing(true);
+      } else {
+        await requestFollow(user.uid, post.authorId);
+        setRequestPending(true);
+      }
+    }
   };
 
   const splitLabel = post.type === 'class'
@@ -113,7 +132,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
       {post.isRepost && post.originalAuthorUsername && (
         <View style={styles.repostHeader}>
           <Ionicons name="repeat" size={13} color="rgba(255,255,255,0.4)" />
-          <Text style={styles.repostText}>Reposted by {post.originalAuthorUsername}</Text>
+          <Text style={styles.repostText}>Originally by @{post.originalAuthorUsername}</Text>
         </View>
       )}
 
@@ -148,12 +167,12 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
           <Text style={styles.username}>{post.authorUsername}</Text>
           {!isOwn && (
             <TouchableOpacity
-              style={[styles.followBtn, following && styles.followingBtn]}
+              style={[styles.followBtn, (following || requestPending) && styles.followingBtn]}
               onPress={handleFollow}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
-              <Text style={[styles.followBtnText, following && styles.followingBtnText]}>
-                {following ? 'Following' : 'Follow'}
+              <Text style={[styles.followBtnText, (following || requestPending) && styles.followingBtnText]}>
+                {following ? 'Following' : requestPending ? 'Requested' : 'Follow'}
               </Text>
             </TouchableOpacity>
           )}

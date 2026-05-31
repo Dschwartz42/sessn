@@ -57,7 +57,10 @@ export default function StreakScreen({ navigation }: Props) {
         const ts = d.data().createdAt;
         if (!ts?.toDate) return;
         const date = ts.toDate() as Date;
-        monthDays.add(date.getDate());
+        // Only add to month calendar if the date is actually in the current month
+        if (date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()) {
+          monthDays.add(date.getDate());
+        }
         if (date >= weekStart) {
           weekCount++;
           const dow = (date.getDay() + 6) % 7; // Mon=0

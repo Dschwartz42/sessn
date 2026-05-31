@@ -146,7 +146,10 @@ export default function NewPostScreen({ navigation }: Props) {
         uploadedUrl = await getDownloadURL(storageRef);
       }
 
-      const cardioData: CardioDetails | undefined = includeCardio
+      // Pure Cardio workouts show the section without a toggle (needsCardioSection),
+      // Lifting workouts show it only when includeCardio is toggled on.
+      const shouldSaveCardio = needsCardioSection || includeCardio;
+      const cardioData: CardioDetails | undefined = shouldSaveCardio
         ? {
             type: cardioType,
             durationMinutes: parseInt(cardioDuration) || 0,
