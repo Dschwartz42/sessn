@@ -11,7 +11,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, radius, typography } from '../../utils/theme';
-import { createPost } from '../../services/postService';
+import { createPost, saveWorkoutTemplate } from '../../services/postService';
 import { Post, WorkoutType, ClassType, Exercise, CardioDetails } from '../../types';
 
 type PostType = 'independent' | 'class';
@@ -153,6 +153,20 @@ export default function NewPostScreen({ navigation }: Props) {
       } as any;
 
       await createPost(postData);
+
+      if (saveWorkout && postType === 'independent') {
+        await saveWorkoutTemplate(user.uid, {
+          workoutTypes: selectedTypes,
+          split: selectedTypes[0],
+          durationMinutes: parseInt(duration) || 0,
+          exercises: selectedTypes.includes('Lifting') ? exercises : undefined,
+          cardio: cardioData,
+          muscleGroups: muscleGroups.length > 0 ? muscleGroups : undefined,
+          warmupDescription: includeWarmup ? warmup.trim() : undefined,
+          workoutInstructions: includeInstructions ? instructions.trim() : undefined,
+        });
+      }
+
       Alert.alert('Posted!', 'Your Sessn has been shared.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -274,9 +288,6 @@ export default function NewPostScreen({ navigation }: Props) {
               </View>
             )}
           </TouchableOpacity>
-
-          {/* Tag users (optional field) */}
-          <FieldInput label="Tag users (optional)" value={''} onChange={() => {}} placeholder="@username" />
 
           {postType === 'independent' && (
             <TouchableOpacity

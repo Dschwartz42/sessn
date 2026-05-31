@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { Post } from '../types';
 import { colors } from '../utils/theme';
-import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../services/postService';
+import { likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost, deletePost } from '../services/postService';
 import { followUser, unfollowUser, isFollowing } from '../services/followService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -20,9 +20,10 @@ interface Props {
   post: Post;
   onPress: () => void;
   onUserPress: () => void;
+  onDelete?: () => void;
 }
 
-export default function PostCard({ post, onPress, onUserPress }: Props) {
+export default function PostCard({ post, onPress, onUserPress, onDelete }: Props) {
   const { user, userDoc } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -65,6 +66,20 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
+    ]);
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+          onDelete?.();
+        },
+      },
     ]);
   };
 
@@ -134,7 +149,14 @@ export default function PostCard({ post, onPress, onUserPress }: Props) {
             </TouchableOpacity>
           )}
         </TouchableOpacity>
-        <Text style={styles.dateText}>{dateStr}</Text>
+        <View style={styles.dateRight}>
+          <Text style={styles.dateText}>{dateStr}</Text>
+          {isOwn && (
+            <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="ellipsis-horizontal" size={16} color="rgba(255,255,255,0.35)" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Stats row */}
@@ -321,6 +343,11 @@ const styles = StyleSheet.create({
   },
   followingBtnText: {
     color: colors.primaryLight,
+  },
+  dateRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   dateText: {
     fontFamily: 'Barlow_500Medium',

@@ -29,23 +29,46 @@ export default function StreakScreen({ navigation }: Props) {
   const totalSessns = userDoc?.totalSessns ?? 0;
   const totalTime = userDoc?.totalTimeMinutes ?? 0;
   const [weekSessns, setWeekSessns] = useState(0);
+  const [weekWorkoutDays, setWeekWorkoutDays] = useState<Set<number>>(new Set());
+  const [monthWorkoutDays, setMonthWorkoutDays] = useState<Set<number>>(new Set());
 
   const todayIdx = (new Date().getDay() + 6) % 7; // Mon=0…Sun=6
 
   useEffect(() => {
     if (!user) return;
     const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - todayIdx);
     weekStart.setHours(0, 0, 0, 0);
+    const queryStart = monthStart < weekStart ? monthStart : weekStart;
+
     getDocs(
       query(
         collection(db, 'posts'),
         where('authorId', '==', user.uid),
-        where('createdAt', '>=', Timestamp.fromDate(weekStart))
-      )
-    ).then((snap) => setWeekSessns(snap.size)).catch(() => {});
-  }, [user, todayIdx]);
+        where('createdAt', '>=', Timestamp.fromDate(queryStart)),
+      ),
+    ).then((snap) => {
+      const weekDays = new Set<number>();
+      const monthDays = new Set<number>();
+      let weekCount = 0;
+      snap.docs.forEach((d) => {
+        const ts = d.data().createdAt;
+        if (!ts?.toDate) return;
+        const date = ts.toDate() as Date;
+        monthDays.add(date.getDate());
+        if (date >= weekStart) {
+          weekCount++;
+          const dow = (date.getDay() + 6) % 7; // Mon=0
+          weekDays.add(dow);
+        }
+      });
+      setWeekSessns(weekCount);
+      setWeekWorkoutDays(weekDays);
+      setMonthWorkoutDays(monthDays);
+    }).catch(() => {});
+  }, [user?.uid, todayIdx]);
 
   const checkMilestone = (id: string): boolean => {
     if (!userDoc) return false;
@@ -152,20 +175,22 @@ export default function StreakScreen({ navigation }: Props) {
         <View style={styles.weekCard}>
           <View style={styles.weekRow}>
             {DAY_LABELS.map((label, i) => {
-              const isPast = i < todayIdx;
               const isToday = i === todayIdx;
               const isUpcoming = i > todayIdx;
+              const didWorkout = weekWorkoutDays.has(i);
               return (
                 <View key={i} style={styles.weekDay}>
                   <Text style={styles.weekDayLabel}>{label}</Text>
                   <View style={[
                     styles.weekDot,
-                    isPast && styles.weekDotDone,
-                    isToday && styles.weekDotToday,
+                    didWorkout && !isToday && styles.weekDotDone,
+                    isToday && didWorkout && styles.weekDotDone,
+                    isToday && !didWorkout && styles.weekDotToday,
                     isUpcoming && styles.weekDotUpcoming,
                   ]}>
-                    {isPast && <Text style={styles.weekDotCheck}>✓</Text>}
-                    {isToday && <Text style={styles.weekDotTodayText}>•</Text>}
+                    {didWorkout && !isToday && <Text style={styles.weekDotCheck}>✓</Text>}
+                    {isToday && didWorkout && <Text style={styles.weekDotCheck}>✓</Text>}
+                    {isToday && !didWorkout && <Text style={styles.weekDotTodayText}>•</Text>}
                   </View>
                 </View>
               );
@@ -209,10 +234,17 @@ export default function StreakScreen({ navigation }: Props) {
                   style={[
                     styles.calCell,
                     !day && styles.calCellBlank,
+                    day !== null && monthWorkoutDays.has(day) && styles.calCellActive,
                     day === today.getDate() && styles.calCellToday,
                   ]}
                 >
-                  {day ? <Text style={styles.calCellText}>{day}</Text> : null}
+                  {day ? (
+                    <Text style={[
+                      styles.calCellText,
+                      monthWorkoutDays.has(day) && styles.calCellTextActive,
+                      day === today.getDate() && styles.calCellTextToday,
+                    ]}>{day}</Text>
+                  ) : null}
                 </View>
               ))}
             </View>
@@ -391,12 +423,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   calCellBlank: { backgroundColor: 'transparent' },
+  calCellActive: { backgroundColor: colors.primary },
   calCellToday: {
     borderWidth: 2,
     borderColor: colors.primary,
     backgroundColor: 'transparent',
   },
   calCellText: { fontFamily: 'Barlow_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  calCellTextActive: { color: '#fff', fontFamily: 'Barlow_700Bold' },
+  calCellTextToday: { color: colors.primaryLight },
   calLegend: {
     flexDirection: 'row', gap: 16,
     marginTop: 12, paddingTop: 12,

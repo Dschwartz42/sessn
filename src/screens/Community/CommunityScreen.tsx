@@ -150,7 +150,7 @@ export default function CommunityScreen({ navigation }: Props) {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.joinBtn}
-              onPress={() => Alert.alert('Find Groups', 'Search for groups using the Search tab.')}
+              onPress={() => navigation.getParent()?.navigate('SearchTab')}
             >
               <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
               <Text style={styles.joinBtnText}>Join Group</Text>
