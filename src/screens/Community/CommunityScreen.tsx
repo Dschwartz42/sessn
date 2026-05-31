@@ -9,7 +9,7 @@ import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Group, GroupMember, UserDoc } from '../../types';
 import { colors } from '../../utils/theme';
-import { getUserGroups, getGroupMembers } from '../../services/groupService';
+import { getUserGroups, getGroupMembers, leaveGroup } from '../../services/groupService';
 import { calcLbs } from '../../services/postService';
 import { getFollowingIds } from '../../services/followService';
 
@@ -358,6 +358,21 @@ function GroupCard({
     { key: 'hrs', label: 'HRS' },
   ];
 
+  const handleLeave = () => {
+    Alert.alert('Leave Group', `Leave "${group.name}"? You can rejoin anytime.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          await leaveGroup(group.id, currentUid);
+          // Parent will re-render because getUserGroups is called on mount
+          Alert.alert('Left group', `You've left "${group.name}".`);
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={styles.groupCard}>
       <View style={styles.groupCardHeader}>
@@ -372,6 +387,9 @@ function GroupCard({
           <Text style={styles.groupName}>{group.name}</Text>
           <Text style={styles.groupMeta}>{group.memberCount} members</Text>
         </View>
+        <TouchableOpacity onPress={handleLeave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Ionicons name="ellipsis-horizontal" size={18} color="rgba(255,255,255,0.35)" />
+        </TouchableOpacity>
       </View>
 
       {/* Metric toggle */}
@@ -408,7 +426,7 @@ function GroupCard({
 
       <TouchableOpacity
         style={styles.viewAllBtn}
-        onPress={() => navigation.navigate('FullLeaderboard', { groupId: group.id })}
+        onPress={() => navigation.navigate('FullLeaderboard', { groupId: group.id, timeFrame })}
       >
         <Text style={styles.viewAllText}>VIEW FULL LEADERBOARD</Text>
         <Ionicons name="chevron-forward" size={12} color={colors.primaryLight} />

@@ -190,7 +190,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
         <WorkoutDetailsPanel post={post} saved={saved} onSave={handleSave} onClose={() => setShowDetails(false)} />
       )}
       {showShare && (
-        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} onClose={() => setShowShare(false)} />
+        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} title={post.title} username={post.authorUsername} onClose={() => setShowShare(false)} />
       )}
     </View>
   );

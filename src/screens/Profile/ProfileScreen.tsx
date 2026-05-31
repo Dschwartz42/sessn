@@ -298,7 +298,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
               </View>
             ) : (
               groups.map((g) => (
-                <View key={g.id} style={styles.groupRow}>
+                <TouchableOpacity
+                  key={g.id}
+                  style={styles.groupRow}
+                  onPress={() => navigation.navigate('FullLeaderboard', { groupId: g.id })}
+                >
                   {g.pictureUrl ? (
                     <Image source={{ uri: g.pictureUrl }} style={styles.groupPic} />
                   ) : (
@@ -310,10 +314,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
                     <Text style={styles.groupName}>{g.name}</Text>
                     <Text style={styles.groupMeta}>{g.memberCount} member{g.memberCount !== 1 ? 's' : ''}</Text>
                   </View>
-                  {g.isPrivate && (
-                    <Ionicons name="lock-closed-outline" size={14} color="rgba(255,255,255,0.3)" />
-                  )}
-                </View>
+                  <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
               ))
             )}
           </View>
@@ -358,6 +360,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
         <ShareSheet
           type="profile"
           profileUid={targetUid}
+          username={profileDoc?.username}
           onClose={() => setShowShare(false)}
         />
       )}

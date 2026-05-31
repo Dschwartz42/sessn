@@ -14,23 +14,25 @@ interface Props {
   postId?: string;
   profileUid?: string;
   imageUrl?: string;
+  title?: string;
+  username?: string;
   onClose: () => void;
 }
 
-export default function ShareSheet({ type, postId, profileUid, imageUrl, onClose }: Props) {
-  const link =
+export default function ShareSheet({ type, postId, profileUid, imageUrl, title, username, onClose }: Props) {
+  const shareText =
     type === 'post'
-      ? `https://sessn.app/post/${postId}`
-      : `https://sessn.app/profile/${profileUid}`;
+      ? `${username ? `@${username}'s ` : ''}workout${title ? ` "${title}"` : ''} — shared on Sessn`
+      : `Follow ${username ? `@${username}` : 'this athlete'} on Sessn`;
 
   const handleCopyLink = async () => {
-    await Clipboard.setStringAsync(link);
-    Alert.alert('Copied', 'Link copied to clipboard.');
+    await Clipboard.setStringAsync(shareText);
+    Alert.alert('Copied', 'Copied to clipboard.');
     onClose();
   };
 
   const handleSendMessage = async () => {
-    await Share.share({ message: link });
+    await Share.share({ message: shareText });
     onClose();
   };
 

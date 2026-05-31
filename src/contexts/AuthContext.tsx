@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { auth, db } from '../services/firebase';
 import { UserDoc } from '../types';
 
@@ -14,7 +15,11 @@ async function registerPushToken(uid: string) {
       : { status: existing };
     if (status !== 'granted') return;
 
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenData = projectId
+      ? await Notifications.getExpoPushTokenAsync({ projectId })
+      : await Notifications.getExpoPushTokenAsync();
+    const token = tokenData.data;
     await updateDoc(doc(db, 'users', uid), { expoPushToken: token });
 
     if (Platform.OS === 'android') {

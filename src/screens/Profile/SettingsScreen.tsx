@@ -36,13 +36,54 @@ const SETTINGS_SECTIONS = [
 ] as const;
 
 export default function SettingsScreen({ navigation }: Props) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log Out', style: 'destructive', onPress: () => signOut() },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account. Your posts and data will be removed. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you absolutely sure?',
+              'Type "DELETE" to confirm — just kidding, tap below to confirm.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, delete my account',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await user?.delete();
+                    } catch (e: any) {
+                      if (e.code === 'auth/requires-recent-login') {
+                        Alert.alert(
+                          'Re-authentication required',
+                          'Please log out and log back in, then try deleting your account again.',
+                        );
+                      } else {
+                        Alert.alert('Error', e.message);
+                      }
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -83,6 +124,10 @@ export default function SettingsScreen({ navigation }: Props) {
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Delete Account</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -161,4 +206,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(232,72,85,0.3)',
   },
   logoutText: { color: colors.red, fontFamily: 'Barlow_700Bold', fontSize: 15 },
+  deleteBtn: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 32,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  deleteText: { color: 'rgba(255,255,255,0.25)', fontFamily: 'Barlow_500Medium', fontSize: 13 },
 });

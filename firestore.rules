@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // Users: anyone authenticated can read; only the user can write their own doc
+    match /users/{uid} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isOwner(uid);
+
+      // Subcollections the user owns
+      match /likedPosts/{postId}   { allow read, write: if isAuth() && isOwner(uid); }
+      match /savedPosts/{postId}   { allow read, write: if isAuth() && isOwner(uid); }
+      match /workouts/{workoutId}  { allow read, write: if isAuth() && isOwner(uid); }
+      match /blockedUsers/{bid}    { allow read, write: if isAuth() && isOwner(uid); }
+    }
+
+    // Posts: authenticated users can read; author can write; likes/saves by anyone authed
+    match /posts/{postId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuth() && (
+        resource.data.authorId == request.auth.uid ||
+        // allow likeCount / repostCount / saveCount increments from any authed user
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likeCount', 'repostCount', 'saveCount'])
+      );
+      allow delete: if isAuth() && resource.data.authorId == request.auth.uid;
+
+      match /likes/{uid}  { allow read: if isAuth(); allow write: if isAuth() && isOwner(uid); }
+    }
+
+    // Follows: authenticated users can read; only follower can write their own follow
+    match /follows/{followId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.followerId == request.auth.uid;
+    }
+
+    // Follow requests: requester can create/delete; followee can delete (accept/decline)
+    match /followRequests/{requestId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isAuth() && (
+        resource.data.followerId == request.auth.uid ||
+        resource.data.followeeId == request.auth.uid
+      );
+    }
+
+    // Groups: authenticated users can read; members can update (stats); owner can delete
+    match /groups/{groupId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuth();
+      allow delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+
+      match /members/{uid} {
+        allow read: if isAuth();
+        allow write: if isAuth();
+      }
+    }
+
+    // Notifications: only the recipient can read/write their own
+    match /notifications/{uid}/items/{notifId} {
+      allow read, write: if isAuth() && isOwner(uid);
+    }
+  }
+}
