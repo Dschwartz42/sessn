@@ -65,7 +65,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
     }
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
+      { text: 'Repost', onPress: async () => { await repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl); setRepostCount((c) => c + 1); } },
     ]);
   };
 

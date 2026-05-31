@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   SafeAreaView, Image, ActivityIndicator, Alert,
@@ -72,13 +73,25 @@ export default function CommunityScreen({ navigation }: Props) {
   const [friendStreaks, setFriendStreaks] = useState<UserDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadGroups = useCallback(async () => {
+    if (!user) return;
+    try {
+      const g = await getUserGroups(user.uid);
+      setGroups(g);
+    } catch {
+      // non-critical
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       try {
-        const g = await getUserGroups(user.uid);
+        const [g, ids] = await Promise.all([
+          getUserGroups(user.uid),
+          getFollowingIds(user.uid),
+        ]);
         setGroups(g);
-        const ids = await getFollowingIds(user.uid);
         if (ids.length > 0) {
           const snap = await getDocs(
             query(collection(db, 'users'), where(documentId(), 'in', ids.slice(0, 30)))
@@ -93,6 +106,12 @@ export default function CommunityScreen({ navigation }: Props) {
     };
     load();
   }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups();
+    }, [loadGroups]),
+  );
 
   const timeFrames: { key: TimeFrame; label: string }[] = [
     { key: 'weekly', label: 'Weekly' },

@@ -27,8 +27,13 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
   const [showDetails, setShowDetails] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
+  const [postError, setPostError] = useState(false);
+
   useEffect(() => {
-    getPost(postId).then(setPost);
+    getPost(postId).then((p) => {
+      if (!p) setPostError(true);
+      else setPost(p);
+    });
   }, [postId]);
 
   useEffect(() => {
@@ -37,6 +42,20 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     isLiked(post.id, user.uid).then(setLiked);
     isSaved(post.id, user.uid).then(setSaved);
   }, [post?.id, user?.uid]);
+
+  if (postError) {
+    return (
+      <View style={styles.loading}>
+        <Ionicons name="alert-circle-outline" size={40} color={colors.textDim} />
+        <Text style={{ color: colors.textDim, fontFamily: 'Barlow_400Regular', marginTop: 12 }}>
+          This post is no longer available.
+        </Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.primaryLight, fontFamily: 'Barlow_600SemiBold' }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!post) {
     return (

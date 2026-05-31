@@ -130,9 +130,9 @@ export default function NewPostScreen({ navigation }: Props) {
       Alert.alert('Error', 'Please select at least one workout type.');
       return;
     }
-    if (postType === 'class' && !selectedClassType) {
-      Alert.alert('Error', 'Please select a class type.');
-      return;
+    if (postType === 'class') {
+      if (!selectedClassType) { Alert.alert('Error', 'Please select a class type.'); return; }
+      if (!className.trim()) { Alert.alert('Error', 'Please enter the class name.'); return; }
     }
 
     setSaving(true);
@@ -156,12 +156,18 @@ export default function NewPostScreen({ navigation }: Props) {
           }
         : undefined;
 
+      const splitValue = postType === 'independent'
+        ? (selectedTypes.includes('Sports') && sport ? sport : selectedTypes[0])
+        : undefined;
+
       const postData: Omit<Post, 'id' | 'likeCount' | 'repostCount' | 'saveCount' | 'createdAt'> = {
         authorId: user.uid,
         authorUsername: userDoc.username,
         authorPicUrl: userDoc.profilePicUrl ?? null,
         type: postType,
         workoutTypes: postType === 'independent' ? selectedTypes : [selectedClassType as WorkoutType],
+        split: splitValue ?? null,
+        classType: postType === 'class' ? selectedClassType ?? null : null,
         title: title.trim(),
         caption: caption.trim() || null,
         imageUrl: uploadedUrl ?? null,
@@ -174,7 +180,9 @@ export default function NewPostScreen({ navigation }: Props) {
           : null,
         muscleGroups: muscleGroups.length > 0 ? muscleGroups : null,
         warmupDescription: includeWarmup ? warmup.trim() : null,
-        workoutInstructions: includeInstructions ? instructions.trim() : null,
+        workoutInstructions: includeInstructions
+          ? instructions.trim()
+          : (needsYogaEtc && workoutDescription.trim() ? workoutDescription.trim() : null),
       } as any;
 
       await createPost(postData);

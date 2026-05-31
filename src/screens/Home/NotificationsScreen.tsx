@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  collection, query, orderBy, onSnapshot, doc, updateDoc,
+  collection, query, orderBy, limit, onSnapshot, doc, updateDoc,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,7 +34,8 @@ export default function NotificationsScreen({ navigation }: Props) {
     if (!user) return;
     const q = query(
       collection(db, 'notifications', user.uid, 'items'),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(50),
     );
     const unsub = onSnapshot(q, (snap) => {
       setNotifs(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Notification)));
