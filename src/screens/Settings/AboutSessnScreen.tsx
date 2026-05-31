@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { colors, spacing } from '../../utils/theme';
@@ -30,12 +30,18 @@ export default function AboutSessnScreen({ navigation }: Props) {
 
         <Text style={styles.sectionHeader}>LEGAL</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.row}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Alert.alert('Terms of Service', 'By using Sessn you agree to use the app for personal fitness tracking only. Do not post harmful, misleading, or offensive content. Sessn reserves the right to suspend accounts that violate these terms.', [{ text: 'OK' }])}
+          >
             <Text style={styles.rowLabel}>Terms of Service</Text>
             <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
           </TouchableOpacity>
           <View style={styles.rowBorder} />
-          <TouchableOpacity style={styles.row}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Alert.alert('Privacy Policy', 'Sessn collects only the data you provide (name, workouts, photos). Your data is stored securely in Firebase and is never sold to third parties. You can delete your account at any time to remove all data.', [{ text: 'OK' }])}
+          >
             <Text style={styles.rowLabel}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
           </TouchableOpacity>

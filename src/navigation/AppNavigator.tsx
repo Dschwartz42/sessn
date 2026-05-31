@@ -28,6 +28,7 @@ import SearchScreen from '../screens/Search/SearchScreen';
 // Community screens
 import CommunityScreen from '../screens/Community/CommunityScreen';
 import FullLeaderboardScreen from '../screens/Community/FullLeaderboardScreen';
+import CreateGroupScreen from '../screens/Community/CreateGroupScreen';
 
 // Profile screens
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -44,6 +45,7 @@ import YourActivityScreen from '../screens/Settings/YourActivityScreen';
 import RepostsSettingsScreen from '../screens/Settings/RepostsSettingsScreen';
 import HelpCenterScreen from '../screens/Settings/HelpCenterScreen';
 import AboutSessnScreen from '../screens/Settings/AboutSessnScreen';
+import FollowerListScreen from '../screens/Profile/FollowerListScreen';
 
 import {
   AuthStackParamList, HomeStackParamList, SearchStackParamList,
@@ -79,6 +81,7 @@ function HomeNavigator() {
       <HomeStack.Screen name="UserProfile" component={ProfileScreen} />
       <HomeStack.Screen name="Streak" component={StreakScreen} />
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
+      <HomeStack.Screen name="FollowerList" component={FollowerListScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -100,6 +103,7 @@ function CommunityNavigator() {
       <CommunityStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
       <CommunityStack.Screen name="UserProfile" component={ProfileScreen} />
       <CommunityStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
+      <CommunityStack.Screen name="CreateGroup" component={CreateGroupScreen} />
     </CommunityStack.Navigator>
   );
 }
@@ -121,6 +125,7 @@ function ProfileNavigator() {
       <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
       <ProfileStack.Screen name="UserProfile" component={ProfileScreen} />
       <ProfileStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
+      <ProfileStack.Screen name="FollowerList" component={FollowerListScreen} />
     </ProfileStack.Navigator>
   );
 }

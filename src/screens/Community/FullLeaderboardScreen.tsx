@@ -4,7 +4,7 @@ import {
   Image, SafeAreaView, ActivityIndicator, Alert, Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, documentId, query, where } from 'firebase/firestore';
 
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,7 +35,7 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
           const ids = await getFollowingIds(user.uid);
           if (ids.length > 0) {
             const snap = await getDocs(
-              query(collection(db, 'users'), where('uid', 'in', ids.slice(0, 30)))
+              query(collection(db, 'users'), where(documentId(), 'in', ids.slice(0, 30)))
             );
             const friends = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserDoc));
             friends.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));

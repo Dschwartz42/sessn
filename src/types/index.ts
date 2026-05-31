@@ -21,6 +21,8 @@ export interface UserDoc {
   totalSessns: number;
   totalTimeMinutes: number;
   totalLbsLifted: number;
+  lastStreakDate?: string;
+  groupIds?: string[];
   allowReposts: boolean;
   showActivityStatus: boolean;
   locationSharing: boolean;

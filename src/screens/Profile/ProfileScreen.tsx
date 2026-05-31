@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
-  FlatList, SafeAreaView, ScrollView, Dimensions,
+  FlatList, SafeAreaView, ScrollView, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,9 +10,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserDoc, Post } from '../../types';
+import { UserDoc, Post, Group } from '../../types';
+import { getUserGroups } from '../../services/groupService';
 import { colors, spacing, radius } from '../../utils/theme';
-import { followUser, unfollowUser, isFollowing } from '../../services/followService';
+import {
+  followUser, unfollowUser, isFollowing,
+  requestFollow, cancelFollowRequest, isPendingRequest,
+} from '../../services/followService';
+import { blockUser, unblockUser, isBlocked } from '../../services/blockService';
 import ShareSheet from '../../components/ShareSheet';
 
 const { width } = Dimensions.get('window');
@@ -31,8 +36,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   const [profileDoc, setProfileDoc] = useState<UserDoc | null>(isOwn ? currentUserDoc : null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [tab, setTab] = useState<OwnTab | OtherTab>('posts');
   const [following, setFollowing] = useState(false);
+  const [requestPending, setRequestPending] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
@@ -40,7 +48,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
       getDoc(doc(db, 'users', targetUid)).then((snap) => {
         if (snap.exists()) setProfileDoc({ uid: snap.id, ...snap.data() } as UserDoc);
       });
-      if (user) isFollowing(user.uid, targetUid).then(setFollowing);
+      if (user) {
+        isFollowing(user.uid, targetUid).then(setFollowing);
+        isPendingRequest(user.uid, targetUid).then(setRequestPending);
+        isBlocked(user.uid, targetUid).then(setBlocked);
+      }
     } else {
       setProfileDoc(currentUserDoc);
     }
@@ -52,6 +64,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
       try {
         if (tab === 'groups') {
           setPosts([]);
+          getUserGroups(targetUid).then(setGroups);
           return;
         }
         if (tab === 'saved') {
@@ -85,9 +98,44 @@ export default function ProfileScreen({ navigation, route }: Props) {
     if (following) {
       await unfollowUser(user.uid, targetUid);
       setFollowing(false);
+    } else if (requestPending) {
+      await cancelFollowRequest(user.uid, targetUid);
+      setRequestPending(false);
+    } else if (profileDoc && !profileDoc.isPublic) {
+      await requestFollow(user.uid, targetUid);
+      setRequestPending(true);
     } else {
       await followUser(user.uid, targetUid);
       setFollowing(true);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user || !targetUid) return;
+    if (blocked) {
+      Alert.alert('Unblock', `Unblock @${profileDoc?.username}?`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unblock',
+          onPress: async () => {
+            await unblockUser(user.uid, targetUid);
+            setBlocked(false);
+          },
+        },
+      ]);
+    } else {
+      Alert.alert('Block', `Block @${profileDoc?.username}? They won't be able to see your posts or find your profile.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            await blockUser(user.uid, targetUid);
+            setBlocked(true);
+            if (following) { await unfollowUser(user.uid, targetUid); setFollowing(false); }
+          },
+        },
+      ]);
     }
   };
 
@@ -121,7 +169,13 @@ export default function ProfileScreen({ navigation, route }: Props) {
               <Ionicons name="chevron-back" size={22} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{profileDoc?.username ?? ''}</Text>
-            <View style={{ width: 40 }} />
+            <TouchableOpacity style={styles.iconBtn} onPress={handleBlock}>
+              <Ionicons
+                name={blocked ? 'ban' : 'ellipsis-horizontal'}
+                size={20}
+                color={blocked ? '#FF5050' : colors.text}
+              />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -162,11 +216,19 @@ export default function ProfileScreen({ navigation, route }: Props) {
           ) : (
             <>
               <TouchableOpacity
-                style={[styles.primaryBtn, following && styles.followingBtn]}
+                style={[
+                  styles.primaryBtn,
+                  (following || requestPending) && styles.followingBtn,
+                  blocked && styles.blockedBtn,
+                ]}
                 onPress={handleFollow}
+                disabled={blocked}
               >
-                <Text style={[styles.primaryBtnText, following && styles.followingBtnText]}>
-                  {following ? 'Following' : 'Follow'}
+                <Text style={[
+                  styles.primaryBtnText,
+                  (following || requestPending) && styles.followingBtnText,
+                ]}>
+                  {blocked ? 'Blocked' : following ? 'Following' : requestPending ? 'Requested' : 'Follow'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondaryBtn} onPress={() => setShowShare(true)}>
@@ -182,14 +244,32 @@ export default function ProfileScreen({ navigation, route }: Props) {
             <Text style={styles.statNum}>{profileDoc?.postCount ?? 0}</Text>
             <Text style={styles.statLabel}>POSTS</Text>
           </View>
-          <View style={styles.statItem}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('FollowerList', {
+                uid: targetUid,
+                type: 'followers',
+                username: profileDoc?.username ?? '',
+              })
+            }
+          >
             <Text style={styles.statNum}>{profileDoc?.followersCount ?? 0}</Text>
             <Text style={styles.statLabel}>FOLLOWERS</Text>
-          </View>
-          <View style={styles.statItem}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('FollowerList', {
+                uid: targetUid,
+                type: 'following',
+                username: profileDoc?.username ?? '',
+              })
+            }
+          >
             <Text style={styles.statNum}>{profileDoc?.followingCount ?? 0}</Text>
             <Text style={styles.statLabel}>FOLLOWING</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Tab bar */}
@@ -206,9 +286,42 @@ export default function ProfileScreen({ navigation, route }: Props) {
           ))}
         </View>
 
+        {/* Groups list */}
+        {tab === 'groups' && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12, gap: 10 }}>
+            {groups.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 32, gap: 8 }}>
+                <Ionicons name="people-outline" size={36} color="rgba(255,255,255,0.2)" />
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'Barlow_400Regular', fontSize: 14 }}>
+                  Not in any groups yet.
+                </Text>
+              </View>
+            ) : (
+              groups.map((g) => (
+                <View key={g.id} style={styles.groupRow}>
+                  {g.pictureUrl ? (
+                    <Image source={{ uri: g.pictureUrl }} style={styles.groupPic} />
+                  ) : (
+                    <View style={[styles.groupPic, styles.groupPicPlaceholder]}>
+                      <Ionicons name="people" size={16} color="rgba(255,255,255,0.4)" />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.groupName}>{g.name}</Text>
+                    <Text style={styles.groupMeta}>{g.memberCount} member{g.memberCount !== 1 ? 's' : ''}</Text>
+                  </View>
+                  {g.isPrivate && (
+                    <Ionicons name="lock-closed-outline" size={14} color="rgba(255,255,255,0.3)" />
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
         {/* Grid */}
         <View style={styles.grid}>
-          {posts.map((p, idx) => (
+          {tab !== 'groups' && posts.map((p, idx) => (
             <TouchableOpacity
               key={p.id}
               style={[
@@ -357,6 +470,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(99,91,255,0.25)',
   },
   followingBtnText: { color: colors.primaryLight },
+  blockedBtn: {
+    backgroundColor: 'rgba(255,80,80,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,80,80,0.25)',
+  },
   secondaryBtn: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -463,4 +581,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Barlow_400Regular',
     fontSize: 10,
   },
+  groupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#151515',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  groupPic: { width: 44, height: 44, borderRadius: 12 },
+  groupPicPlaceholder: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupName: { color: colors.text, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
+  groupMeta: { color: 'rgba(255,255,255,0.4)', fontFamily: 'Barlow_400Regular', fontSize: 12, marginTop: 2 },
 });

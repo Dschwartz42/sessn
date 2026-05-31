@@ -44,16 +44,17 @@ export default function SignupScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-
-      const usernameQuery = query(collection(db, 'users'), where('username', '==', usernameClean));
-      const usernameSnap = await getDocs(usernameQuery);
+      // Check username availability BEFORE creating the auth account
+      const usernameSnap = await getDocs(
+        query(collection(db, 'users'), where('username', '==', usernameClean)),
+      );
       if (!usernameSnap.empty) {
-        await cred.user.delete();
         Alert.alert('Error', 'That username is already taken.');
         setLoading(false);
         return;
       }
+
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await setDoc(doc(db, 'users', cred.user.uid), {
         uid: cred.user.uid,
         displayName: displayName.trim(),

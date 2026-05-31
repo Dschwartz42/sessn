@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -63,9 +63,20 @@ export default function EditProfileScreen({ navigation }: Props) {
     if (!user) return;
     setSaving(true);
     try {
+      const newUsername = username.trim().toLowerCase();
+      if (newUsername !== userDoc?.username) {
+        const snap = await getDocs(
+          query(collection(db, 'users'), where('username', '==', newUsername)),
+        );
+        if (!snap.empty) {
+          Alert.alert('Error', 'That username is already taken.');
+          setSaving(false);
+          return;
+        }
+      }
       await updateDoc(doc(db, 'users', user.uid), {
         displayName: displayName.trim(),
-        username: username.trim().toLowerCase(),
+        username: newUsername,
         bio: bio.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),

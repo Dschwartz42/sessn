@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../utils/theme';
 
@@ -9,13 +9,31 @@ const FAQS = [
   { q: 'How does the streak work?', a: 'Log at least one Sessn per week to maintain your streak. Streaks are counted in weeks.' },
   { q: 'Can I make my account private?', a: 'Yes — go to Account Privacy in settings and toggle Private Account.' },
   { q: 'How do I join a group?', a: 'Search for a group on the Community page. Public groups can be joined instantly, private groups require approval.' },
-  { q: 'Can I delete a post?', a: 'Tap the three dots on any of your posts to access the delete option.' },
+  { q: 'Can I delete a post?', a: 'Tap the three dots (...) on any of your posts to access the delete option.' },
 ];
 
-const LINKS = [
-  { icon: 'flag-outline' as const, label: 'Report a Problem' },
-  { icon: 'mail-outline' as const, label: 'Contact Support' },
-  { icon: 'document-text-outline' as const, label: 'Community Guidelines' },
+const SUPPORT_EMAIL = 'support@sessn.app';
+
+const LINKS: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; onPress: () => void }[] = [
+  {
+    icon: 'flag-outline',
+    label: 'Report a Problem',
+    onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Problem%20Report`),
+  },
+  {
+    icon: 'mail-outline',
+    label: 'Contact Support',
+    onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`),
+  },
+  {
+    icon: 'document-text-outline',
+    label: 'Community Guidelines',
+    onPress: () => Alert.alert(
+      'Community Guidelines',
+      'Be respectful, keep content fitness-related, no spam or harassment. Violations may result in account suspension.',
+      [{ text: 'OK' }],
+    ),
+  },
 ];
 
 export default function HelpCenterScreen({ navigation }: Props) {
@@ -44,7 +62,7 @@ export default function HelpCenterScreen({ navigation }: Props) {
         <Text style={[styles.sectionHeader, { marginTop: 24 }]}>SUPPORT</Text>
         <View style={styles.card}>
           {LINKS.map((l, i) => (
-            <TouchableOpacity key={l.label} style={[styles.linkRow, i < LINKS.length - 1 && styles.faqBorder]}>
+            <TouchableOpacity key={l.label} style={[styles.linkRow, i < LINKS.length - 1 && styles.faqBorder]} onPress={l.onPress}>
               <View style={styles.linkIcon}>
                 <Ionicons name={l.icon} size={18} color={colors.primary} />
               </View>

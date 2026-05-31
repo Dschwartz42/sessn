@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Image, SafeAreaView,
@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import {
   collection, query, where, orderBy, limit,
-  getDocs, startAfter, DocumentSnapshot, onSnapshot,
+  getDocs, onSnapshot,
 } from 'firebase/firestore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { db } from '../../services/firebase';
@@ -29,7 +29,6 @@ export default function HomeScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
-  const lastDoc = useRef<DocumentSnapshot | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -65,27 +64,36 @@ export default function HomeScreen({ navigation }: Props) {
   const loadPosts = useCallback(async (refresh = false) => {
     if (!user || followingIds.length === 0) { setLoading(false); return; }
     try {
-      const chunk = followingIds.slice(0, 30);
-      let q = query(
-        collection(db, 'posts'),
-        where('authorId', 'in', chunk),
-        orderBy('createdAt', 'desc'),
-        limit(PAGE_SIZE)
-      );
-      if (!refresh && lastDoc.current) {
-        q = query(
-          collection(db, 'posts'),
-          where('authorId', 'in', chunk),
-          orderBy('createdAt', 'desc'),
-          startAfter(lastDoc.current),
-          limit(PAGE_SIZE)
-        );
+      // Firestore 'in' operator supports up to 30 values — batch all followed users
+      const chunks: string[][] = [];
+      for (let i = 0; i < followingIds.length; i += 30) {
+        chunks.push(followingIds.slice(i, i + 30));
       }
-      const snap = await getDocs(q);
-      const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
-      lastDoc.current = snap.docs[snap.docs.length - 1] ?? null;
-      if (refresh) setPosts(fetched);
-      else setPosts((prev) => [...prev, ...fetched]);
+
+      const allSnaps = await Promise.all(
+        chunks.map((chunk) =>
+          getDocs(
+            query(
+              collection(db, 'posts'),
+              where('authorId', 'in', chunk),
+              orderBy('createdAt', 'desc'),
+              limit(PAGE_SIZE * 2),
+            ),
+          ),
+        ),
+      );
+
+      const allPosts = allSnaps
+        .flatMap((snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post)))
+        .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+
+      if (refresh) {
+        setPosts(allPosts.slice(0, PAGE_SIZE));
+      } else {
+        const existing = new Set(posts.map((p) => p.id));
+        const next = allPosts.filter((p) => !existing.has(p.id)).slice(0, PAGE_SIZE);
+        setPosts((prev) => [...prev, ...next]);
+      }
     } finally {
       setLoading(false);
     }
@@ -97,7 +105,6 @@ export default function HomeScreen({ navigation }: Props) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    lastDoc.current = null;
     await loadPosts(true);
     setRefreshing(false);
   };

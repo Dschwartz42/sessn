@@ -5,7 +5,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from '../../types';
-import { getPost, likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost } from '../../services/postService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { getPost, likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost, deletePost } from '../../services/postService';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, radius, typography } from '../../utils/theme';
 import WorkoutDetailsPanel from '../../components/WorkoutDetailsPanel';
@@ -20,6 +22,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
   const { user, userDoc } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [saved, setSaved] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -30,6 +33,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     if (!post || !user) return;
+    setLikeCount(post.likeCount);
     isLiked(post.id, user.uid).then(setLiked);
     isSaved(post.id, user.uid).then(setSaved);
   }, [post?.id, user?.uid]);
@@ -44,8 +48,22 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
 
   const handleLike = async () => {
     if (!user) return;
-    if (liked) { await unlikePost(post.id, user.uid); setLiked(false); }
-    else { await likePost(post.id, user.uid); setLiked(true); }
+    if (liked) { await unlikePost(post.id, user.uid); setLiked(false); setLikeCount((c) => c - 1); }
+    else { await likePost(post.id, user.uid); setLiked(true); setLikeCount((c) => c + 1); }
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+          navigation.goBack();
+        },
+      },
+    ]);
   };
 
   const handleSave = async () => {
@@ -54,8 +72,15 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     else { await savePost(post.id, user.uid); setSaved(true); }
   };
 
-  const handleRepost = () => {
+  const handleRepost = async () => {
     if (!user || !userDoc) return;
+    if (post.authorId !== user.uid) {
+      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
+      if (authorSnap.exists() && authorSnap.data().allowReposts === false) {
+        Alert.alert('Reposts disabled', `@${post.authorUsername} has turned off reposts.`);
+        return;
+      }
+    }
     Alert.alert('Repost', 'Share this Sessn to your profile?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Repost', onPress: () => repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl) },
@@ -108,6 +133,11 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
             )}
             <Text style={styles.authorName}>{post.authorUsername}</Text>
           </TouchableOpacity>
+          {post.authorId === user?.uid && (
+            <TouchableOpacity onPress={handleDelete} style={styles.topBtn}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Bottom info */}
@@ -138,7 +168,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
           <View style={styles.actions}>
             <TouchableOpacity style={styles.action} onPress={handleLike}>
               <Ionicons name={liked ? 'heart' : 'heart-outline'} size={26} color={liked ? colors.red : colors.text} />
-              <Text style={styles.actionCount}>{post.likeCount + (liked ? 1 : 0)}</Text>
+              <Text style={styles.actionCount}>{likeCount}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.action} onPress={handleRepost}>
               <Ionicons name="repeat" size={26} color={colors.text} />

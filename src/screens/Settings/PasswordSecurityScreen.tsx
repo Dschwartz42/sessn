@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
-  TextInput, Switch, Alert, ActivityIndicator, ScrollView,
+  TextInput, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
@@ -95,17 +95,18 @@ export default function PasswordSecurityScreen({ navigation }: Props) {
 
         <Text style={[styles.sectionHeader, { marginTop: 24 }]}>TWO-FACTOR AUTHENTICATION</Text>
         <View style={styles.card}>
-          <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={() => Alert.alert('Coming Soon', 'Two-factor authentication will be available in a future update.')}
+          >
             <View style={{ flex: 1 }}>
               <Text style={styles.toggleLabel}>Enable 2FA</Text>
               <Text style={styles.toggleDesc}>Verify via SMS when logging in</Text>
             </View>
-            <Switch
-              trackColor={{ false: 'rgba(255,255,255,0.06)', true: colors.primary }}
-              thumbColor={colors.text}
-              value={false}
-            />
-          </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>SOON</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -204,5 +205,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Barlow_400Regular',
     fontSize: 13,
     marginTop: 2,
+  },
+  comingSoonBadge: {
+    backgroundColor: 'rgba(99,91,255,0.15)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.3)',
+  },
+  comingSoonText: {
+    color: 'rgba(99,91,255,0.8)',
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 10,
+    letterSpacing: 1,
   },
 });

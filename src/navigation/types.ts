@@ -13,6 +13,7 @@ export type HomeStackParamList = {
   UserProfile: { uid: string };
   Streak: undefined;
   Notifications: undefined;
+  FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
 
 export type SearchStackParamList = {
@@ -26,6 +27,7 @@ export type CommunityStackParamList = {
   FullLeaderboard: { groupId?: string; type?: string };
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  CreateGroup: undefined;
 };
 
 export type ProfileStackParamList = {
@@ -43,6 +45,7 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
 
 export type MainTabParamList = {
