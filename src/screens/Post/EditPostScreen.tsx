@@ -128,7 +128,7 @@ export default function EditPostScreen({ navigation, route }: Props) {
         ? {
             type: cardioType,
             durationMinutes: parseInt(cardioDuration) || 0,
-            distance: cardioDistance ? parseFloat(cardioDistance) : undefined,
+            ...(cardioDistance ? { distance: parseFloat(cardioDistance) } : {}),
             distanceUnit: 'miles',
             timing: post.cardio?.timing ?? 'after',
           }
