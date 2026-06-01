@@ -10,6 +10,7 @@ export type AuthStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   ExpandedPost: { postId: string };
+  EditPost: { postId: string };
   UserProfile: { uid: string };
   Streak: undefined;
   Notifications: undefined;
@@ -21,6 +22,7 @@ export type CommunityStackParamList = {
   FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  EditPost: { postId: string };
   CreateGroup: undefined;
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
@@ -29,6 +31,7 @@ export type SearchStackParamList = {
   Search: undefined;
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  EditPost: { postId: string };
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
 };
 
@@ -47,6 +50,7 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   UserProfile: { uid: string };
   ExpandedPost: { postId: string };
+  EditPost: { postId: string };
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
   FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
 };

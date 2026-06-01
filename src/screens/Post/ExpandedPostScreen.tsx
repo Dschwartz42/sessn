@@ -71,21 +71,31 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     else { await likePost(post.id, user.uid); setLiked(true); setLikeCount((c) => c + 1); }
   };
 
-  const handleDelete = () => {
-    Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
-      { text: 'Cancel', style: 'cancel' },
+  const handleOwnPostMenu = () => {
+    Alert.alert(post.title, undefined, [
+      { text: 'Edit', onPress: () => navigation.navigate('EditPost', { postId: post.id }) },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
-            navigation.goBack();
-          } catch {
-            Alert.alert('Error', 'Could not delete post. Try again.');
-          }
+        onPress: () => {
+          Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+                  navigation.goBack();
+                } catch {
+                  Alert.alert('Error', 'Could not delete post. Try again.');
+                }
+              },
+            },
+          ]);
         },
       },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -166,7 +176,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
             <Text style={styles.authorName}>{post.authorUsername}</Text>
           </TouchableOpacity>
           {post.authorId === user?.uid && (
-            <TouchableOpacity onPress={handleDelete} style={styles.topBtn}>
+            <TouchableOpacity onPress={handleOwnPostMenu} style={styles.topBtn}>
               <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
             </TouchableOpacity>
           )}

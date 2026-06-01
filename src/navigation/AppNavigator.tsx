@@ -21,6 +21,7 @@ import NotificationsScreen from '../screens/Home/NotificationsScreen';
 // Post screens
 import ExpandedPostScreen from '../screens/Post/ExpandedPostScreen';
 import NewPostScreen from '../screens/Post/NewPostScreen';
+import EditPostScreen from '../screens/Post/EditPostScreen';
 
 // Search screens
 import SearchScreen from '../screens/Search/SearchScreen';
@@ -82,6 +83,7 @@ function HomeNavigator() {
       <HomeStack.Screen name="Streak" component={StreakScreen} />
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="FollowerList" component={FollowerListScreen} />
+      <HomeStack.Screen name="EditPost" component={EditPostScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -93,6 +95,7 @@ function SearchNavigator() {
       <SearchStack.Screen name="UserProfile" component={ProfileScreen} />
       <SearchStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <SearchStack.Screen name="FollowerList" component={FollowerListScreen} />
+      <SearchStack.Screen name="EditPost" component={EditPostScreen} />
     </SearchStack.Navigator>
   );
 }
@@ -106,6 +109,7 @@ function CommunityNavigator() {
       <CommunityStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <CommunityStack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <CommunityStack.Screen name="FollowerList" component={FollowerListScreen} />
+      <CommunityStack.Screen name="EditPost" component={EditPostScreen} />
     </CommunityStack.Navigator>
   );
 }
@@ -129,6 +133,7 @@ function ProfileNavigator() {
       <ProfileStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <ProfileStack.Screen name="FollowerList" component={FollowerListScreen} />
       <ProfileStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
+      <ProfileStack.Screen name="EditPost" component={EditPostScreen} />
     </ProfileStack.Navigator>
   );
 }

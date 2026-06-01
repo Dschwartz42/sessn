@@ -21,9 +21,10 @@ interface Props {
   onPress: () => void;
   onUserPress: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
 }
 
-export default function PostCard({ post, onPress, onUserPress, onDelete }: Props) {
+export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit }: Props) {
   const { user, userDoc } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -73,17 +74,27 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
     ]);
   };
 
-  const handleDelete = () => {
-    Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
-      { text: 'Cancel', style: 'cancel' },
+  const handleOwnPostMenu = () => {
+    Alert.alert(post.title, undefined, [
+      { text: 'Edit', onPress: () => onEdit?.() },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
-          onDelete?.();
+        onPress: () => {
+          Alert.alert('Delete Sessn', 'This will permanently remove this post.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+                onDelete?.();
+              },
+            },
+          ]);
         },
       },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -180,7 +191,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete }: Props
         <View style={styles.dateRight}>
           <Text style={styles.dateText}>{dateStr}</Text>
           <TouchableOpacity
-            onPress={isOwn ? handleDelete : handleReport}
+            onPress={isOwn ? handleOwnPostMenu : handleReport}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="ellipsis-horizontal" size={16} color="rgba(255,255,255,0.35)" />

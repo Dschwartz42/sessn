@@ -115,6 +115,41 @@ export async function deletePost(postId: string, authorId: string, durationMinut
   );
 }
 
+export async function updatePost(
+  postId: string,
+  authorId: string,
+  updates: Partial<Pick<Post,
+    'title' | 'caption' | 'imageUrl' | 'location' |
+    'durationMinutes' | 'exercises' | 'cardio' |
+    'muscleGroups' | 'warmupDescription' | 'workoutInstructions' | 'classDetails'
+  >>,
+  oldDurationMinutes: number,
+  oldExercises?: Exercise[],
+): Promise<void> {
+  await updateDoc(doc(db, 'posts', postId), updates);
+
+  const newDuration = updates.durationMinutes ?? oldDurationMinutes;
+  const durationDelta = newDuration - oldDurationMinutes;
+  const lbsDelta = calcLbs(updates.exercises ?? oldExercises) - calcLbs(oldExercises);
+
+  if (durationDelta !== 0 || lbsDelta !== 0) {
+    const statUpdates: Record<string, unknown> = {};
+    if (durationDelta !== 0) statUpdates.totalTimeMinutes = increment(durationDelta);
+    if (lbsDelta !== 0) statUpdates.totalLbsLifted = increment(lbsDelta);
+
+    const userRef = doc(db, 'users', authorId);
+    await updateDoc(userRef, statUpdates);
+
+    const userSnap = await getDoc(userRef);
+    const groupIds: string[] = userSnap.data()?.groupIds ?? [];
+    await Promise.all(
+      groupIds.map((gid) =>
+        updateDoc(doc(db, 'groups', gid, 'members', authorId), statUpdates).catch(() => null),
+      ),
+    );
+  }
+}
+
 export async function getSavedWorkouts(uid: string) {
   const snap = await getDocs(collection(db, 'users', uid, 'workouts'));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<{

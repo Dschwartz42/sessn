@@ -250,6 +250,7 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('ExpandedPost', { postId: item.id })}
             onUserPress={() => navigation.navigate('UserProfile', { uid: item.authorId })}
             onDelete={() => setPosts((p) => p.filter((x) => x.id !== item.id))}
+            onEdit={() => navigation.navigate('EditPost', { postId: item.id })}
           />
         )}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
