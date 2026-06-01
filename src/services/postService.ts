@@ -126,7 +126,11 @@ export async function updatePost(
   oldDurationMinutes: number,
   oldExercises?: Exercise[],
 ): Promise<void> {
-  await updateDoc(doc(db, 'posts', postId), updates);
+  // Firestore rejects undefined values — strip them out, keep null (which clears fields)
+  const safeUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([, v]) => v !== undefined),
+  );
+  await updateDoc(doc(db, 'posts', postId), safeUpdates);
 
   const newDuration = updates.durationMinutes ?? oldDurationMinutes;
   const durationDelta = newDuration - oldDurationMinutes;

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
-  TextInput, ScrollView, Image, Alert, ActivityIndicator,
-} from 'react-native';
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ScrollView, Image, Alert, ActivityIndicator} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, updateDoc, query, collection, where, getDocs, writeBatch } from 'firebase/firestore';
@@ -37,7 +38,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,

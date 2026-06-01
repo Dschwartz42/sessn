@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
-  TextInput, ScrollView, Image, Alert, ActivityIndicator, Switch,
-} from 'react-native';
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ScrollView, Image, Alert, ActivityIndicator, Switch} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -82,7 +83,7 @@ export default function EditPostScreen({ navigation, route }: Props) {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       quality: 0.8,
     });
@@ -123,7 +124,7 @@ export default function EditPostScreen({ navigation, route }: Props) {
       const hasLifting = post.workoutTypes?.includes('Lifting');
       const hasCardio = post.workoutTypes?.includes('Cardio') || !!post.cardio;
 
-      const cardioData: CardioDetails | undefined = hasCardio && cardioDuration
+      const cardioData: CardioDetails | null = hasCardio && cardioDuration
         ? {
             type: cardioType,
             durationMinutes: parseInt(cardioDuration) || 0,
@@ -131,7 +132,7 @@ export default function EditPostScreen({ navigation, route }: Props) {
             distanceUnit: 'miles',
             timing: post.cardio?.timing ?? 'after',
           }
-        : post.cardio ?? undefined;
+        : (post.cardio ?? null);
 
       await updatePost(
         post.id,
@@ -142,14 +143,14 @@ export default function EditPostScreen({ navigation, route }: Props) {
           imageUrl,
           location: locationName && geoLocation ? { name: locationName, ...geoLocation } : null,
           durationMinutes: parseInt(duration),
-          exercises: hasLifting ? exercises : post.exercises,
-          cardio: cardioData ?? null,
+          exercises: hasLifting ? exercises : (post.exercises ?? null),
+          cardio: cardioData,
           muscleGroups: muscleGroups.length > 0 ? muscleGroups : null,
           warmupDescription: includeWarmup ? warmup.trim() : null,
           workoutInstructions: includeInstructions ? instructions.trim() : null,
           classDetails: post.type === 'class'
             ? { name: className.trim(), rating: starRating, description: classDescription.trim() }
-            : post.classDetails,
+            : (post.classDetails ?? null),
         } as any,
         post.durationMinutes,
         post.exercises,

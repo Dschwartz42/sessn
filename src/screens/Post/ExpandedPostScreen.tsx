@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
-  Dimensions, SafeAreaView, Alert, ActivityIndicator, Linking, Platform,
-} from 'react-native';
+  Dimensions, Alert, ActivityIndicator, Linking, Platform} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from '../../types';
 import { doc, getDoc } from 'firebase/firestore';

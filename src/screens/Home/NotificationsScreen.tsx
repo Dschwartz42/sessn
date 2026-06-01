@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Image, SafeAreaView, ActivityIndicator,
-} from 'react-native';
+  Image, ActivityIndicator} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import {
   collection, query, orderBy, limit, onSnapshot, doc, updateDoc,

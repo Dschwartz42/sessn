@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
-  SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
-} from 'react-native';
+  View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

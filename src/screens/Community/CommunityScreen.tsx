@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, Image, ActivityIndicator, Alert,
-} from 'react-native';
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { collection, query, where, getDocs, documentId, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';

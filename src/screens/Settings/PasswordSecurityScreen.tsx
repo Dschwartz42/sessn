@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, ScrollView,
-} from 'react-native';
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, Alert, ActivityIndicator, ScrollView} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { auth } from '../../services/firebase';

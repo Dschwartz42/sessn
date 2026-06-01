@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
-  FlatList, Image, Alert, ActivityIndicator,
-} from 'react-native';
+  View, Text, StyleSheet, TouchableOpacity,
+  FlatList, Image, Alert, ActivityIndicator} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserDoc } from '../../types';
