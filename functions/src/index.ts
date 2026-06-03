@@ -48,6 +48,16 @@ function buildPushTitle(type: string, fromUsername: string): string {
   }
 }
 
+function buildPushBody(type: string): string {
+  switch (type) {
+    case 'follow_request': return 'Tap to view their profile.';
+    case 'follow_accepted': return 'You can now see their Sessns.';
+    case 'like': return 'Tap to view your post.';
+    case 'repost': return 'Tap to see the repost.';
+    default: return '';
+  }
+}
+
 // Triggers when a new notification document is created for a user.
 export const onNotificationCreated = functions.firestore
   .document('notifications/{uid}/items/{notifId}')
@@ -75,7 +85,7 @@ export const onNotificationCreated = functions.firestore
         to: token,
         sound: 'default',
         title: buildPushTitle(notif.type, notif.fromUsername ?? 'Someone'),
-        body: buildPushTitle(notif.type, notif.fromUsername ?? 'Someone'),
+        body: buildPushBody(notif.type),
         data: { type: notif.type, uid, notifId: snap.id },
       },
     ]);

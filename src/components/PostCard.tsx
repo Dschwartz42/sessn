@@ -87,7 +87,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
               text: 'Delete',
               style: 'destructive',
               onPress: async () => {
-                await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+                await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises, post.isRepost, post.originalPostId);
                 onDelete?.();
               },
             },
@@ -174,8 +174,10 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
 
       {/* Username + date row */}
       <View style={styles.usernameRow}>
-        <TouchableOpacity onPress={onUserPress} style={styles.usernameLeft}>
-          <Text style={styles.username}>{post.authorUsername}</Text>
+        <View style={styles.usernameLeft}>
+          <TouchableOpacity onPress={onUserPress}>
+            <Text style={styles.username}>{post.authorUsername}</Text>
+          </TouchableOpacity>
           {!isOwn && (
             <TouchableOpacity
               style={[styles.followBtn, (following || requestPending) && styles.followingBtn]}
@@ -187,7 +189,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
               </Text>
             </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
         <View style={styles.dateRight}>
           <Text style={styles.dateText}>{dateStr}</Text>
           <TouchableOpacity

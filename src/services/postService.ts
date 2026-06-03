@@ -90,29 +90,44 @@ export async function createPost(data: Omit<Post, 'id' | 'likeCount' | 'repostCo
   return ref.id;
 }
 
-export async function deletePost(postId: string, authorId: string, durationMinutes: number, exercises?: Exercise[]) {
+export async function deletePost(
+  postId: string,
+  authorId: string,
+  durationMinutes: number,
+  exercises?: Exercise[],
+  isRepost?: boolean,
+  originalPostId?: string,
+) {
   const lbs = calcLbs(exercises);
   await deleteDoc(doc(db, 'posts', postId));
 
-  const userRef = doc(db, 'users', authorId);
-  await updateDoc(userRef, {
-    postCount: increment(-1),
-    totalSessns: increment(-1),
-    totalTimeMinutes: increment(-durationMinutes),
-    totalLbsLifted: increment(-lbs),
-  });
+  if (isRepost && originalPostId) {
+    await updateDoc(doc(db, 'posts', originalPostId), { repostCount: increment(-1) }).catch(() => null);
+  }
 
-  const userSnap = await getDoc(userRef);
-  const groupIds: string[] = userSnap.data()?.groupIds ?? [];
-  await Promise.all(
-    groupIds.map((gid) =>
-      updateDoc(doc(db, 'groups', gid, 'members', authorId), {
-        totalSessns: increment(-1),
-        totalTimeMinutes: increment(-durationMinutes),
-        totalLbsLifted: increment(-lbs),
-      }).catch(() => null),
-    ),
-  );
+  const userRef = doc(db, 'users', authorId);
+  if (isRepost) {
+    await updateDoc(userRef, { postCount: increment(-1) });
+  } else {
+    await updateDoc(userRef, {
+      postCount: increment(-1),
+      totalSessns: increment(-1),
+      totalTimeMinutes: increment(-durationMinutes),
+      totalLbsLifted: increment(-lbs),
+    });
+
+    const userSnap = await getDoc(userRef);
+    const groupIds: string[] = userSnap.data()?.groupIds ?? [];
+    await Promise.all(
+      groupIds.map((gid) =>
+        updateDoc(doc(db, 'groups', gid, 'members', authorId), {
+          totalSessns: increment(-1),
+          totalTimeMinutes: increment(-durationMinutes),
+          totalLbsLifted: increment(-lbs),
+        }).catch(() => null),
+      ),
+    );
+  }
 }
 
 export async function updatePost(

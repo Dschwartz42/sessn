@@ -48,6 +48,7 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
             setFriendStreaks(friends);
           }
         } else {
+          if (!groupId) return;
           const snap = await getDoc(doc(db, 'groups', groupId));
           if (snap.exists()) setGroup({ id: snap.id, ...snap.data() } as Group);
           const m = await getGroupMembers(groupId);
@@ -128,8 +129,12 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
         style: 'destructive',
         onPress: async () => {
           if (!user) return;
-          await leaveGroup(groupId, user.uid);
-          navigation.goBack();
+          try {
+            await leaveGroup(groupId, user.uid);
+            navigation.goBack();
+          } catch {
+            Alert.alert('Error', 'Could not leave group. Check your connection and try again.');
+          }
         },
       },
     ]);

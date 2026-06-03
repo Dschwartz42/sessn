@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +28,11 @@ export default function AccountPrivacyScreen({ navigation }: Props) {
 
   const handleToggle = async (key: string, value: boolean) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid), { [key]: value });
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { [key]: value });
+    } catch {
+      Alert.alert('Error', 'Could not save setting. Check your connection and try again.');
+    }
   };
 
   return (

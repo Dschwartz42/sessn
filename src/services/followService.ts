@@ -1,6 +1,6 @@
 import {
   doc, setDoc, deleteDoc, getDoc, serverTimestamp,
-  increment, updateDoc, collection, getDocs, query, where,
+  increment, updateDoc, collection, getDocs, query, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -9,20 +9,20 @@ const requestDocId = followDocId;
 
 export async function followUser(followerId: string, followeeId: string) {
   const id = followDocId(followerId, followeeId);
-  await setDoc(doc(db, 'follows', id), {
-    followerId,
-    followeeId,
-    createdAt: serverTimestamp(),
-  });
-  await updateDoc(doc(db, 'users', followerId), { followingCount: increment(1) });
-  await updateDoc(doc(db, 'users', followeeId), { followersCount: increment(1) });
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'follows', id), { followerId, followeeId, createdAt: serverTimestamp() });
+  batch.update(doc(db, 'users', followerId), { followingCount: increment(1) });
+  batch.update(doc(db, 'users', followeeId), { followersCount: increment(1) });
+  await batch.commit();
 }
 
 export async function unfollowUser(followerId: string, followeeId: string) {
   const id = followDocId(followerId, followeeId);
-  await deleteDoc(doc(db, 'follows', id));
-  await updateDoc(doc(db, 'users', followerId), { followingCount: increment(-1) });
-  await updateDoc(doc(db, 'users', followeeId), { followersCount: increment(-1) });
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'follows', id));
+  batch.update(doc(db, 'users', followerId), { followingCount: increment(-1) });
+  batch.update(doc(db, 'users', followeeId), { followersCount: increment(-1) });
+  await batch.commit();
 }
 
 export async function isFollowing(followerId: string, followeeId: string): Promise<boolean> {

@@ -4,6 +4,7 @@ import {
   TouchableWithoutFeedback, Share, Alert,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +45,10 @@ export default function ShareSheet({ type, postId, profileUid, imageUrl, title, 
       return;
     }
     try {
-      await MediaLibrary.saveToLibraryAsync(imageUrl);
+      const filename = (imageUrl.split('/').pop()?.split('?')[0] ?? 'sessn_image') + '.jpg';
+      const localUri = (FileSystem.cacheDirectory ?? '') + filename;
+      const { uri } = await FileSystem.downloadAsync(imageUrl, localUri);
+      await MediaLibrary.saveToLibraryAsync(uri);
       Alert.alert('Saved', 'Image saved to your camera roll.');
     } catch {
       Alert.alert('Error', 'Could not save image.');

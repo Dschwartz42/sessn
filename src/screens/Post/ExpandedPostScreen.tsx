@@ -86,7 +86,7 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
               style: 'destructive',
               onPress: async () => {
                 try {
-                  await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises);
+                  await deletePost(post.id, post.authorId, post.durationMinutes, post.exercises, post.isRepost, post.originalPostId);
                   navigation.goBack();
                 } catch {
                   Alert.alert('Error', 'Could not delete post. Try again.');

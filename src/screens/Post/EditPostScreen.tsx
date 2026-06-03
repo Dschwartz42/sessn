@@ -51,7 +51,9 @@ export default function EditPostScreen({ navigation, route }: Props) {
   const [starRating, setStarRating] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     getPost(postId).then((p) => {
+      if (cancelled) return;
       if (!p) { Alert.alert('Error', 'Post not found.'); navigation.goBack(); return; }
       if (p.authorId !== user?.uid) { Alert.alert('Error', 'You can only edit your own posts.'); navigation.goBack(); return; }
       setPost(p);
@@ -79,6 +81,7 @@ export default function EditPostScreen({ navigation, route }: Props) {
       }
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [postId]);
 
   const takePhoto = async () => {

@@ -67,6 +67,7 @@ export default function SettingsScreen({ navigation }: Props) {
                   onPress: async () => {
                     try {
                       await user?.delete();
+                      await signOut();
                     } catch (e: any) {
                       if (e.code === 'auth/requires-recent-login') {
                         Alert.alert(
