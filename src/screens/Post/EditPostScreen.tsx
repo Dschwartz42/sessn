@@ -81,13 +81,28 @@ export default function EditPostScreen({ navigation, route }: Props) {
     });
   }, [postId]);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      quality: 0.8,
-    });
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Allow camera access to take a photo.'); return; }
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
     if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const pickFromLibrary = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 0.8 });
+    if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const removePhoto = () => { setImageUri(''); setExistingImageUrl(''); };
+
+  const showPhotoOptions = () => {
+    const buttons: any[] = [
+      { text: 'Take Photo', onPress: takePhoto },
+      { text: 'Choose from Library', onPress: pickFromLibrary },
+    ];
+    if (imageUri || existingImageUrl) buttons.push({ text: 'Remove Photo', style: 'destructive', onPress: removePhoto });
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Photo', undefined, buttons);
   };
 
   const fetchLocation = async () => {
@@ -232,14 +247,22 @@ export default function EditPostScreen({ navigation, route }: Props) {
         <Field label="Duration (minutes)" value={duration} onChange={setDuration} keyboardType="numeric" />
 
         {/* Photo */}
-        <Text style={styles.sectionLabel}>PHOTO</Text>
-        <TouchableOpacity style={styles.photoBtn} onPress={pickImage}>
+        <Text style={styles.sectionLabel}>PHOTO (OPTIONAL)</Text>
+        <TouchableOpacity style={styles.photoBtn} onPress={showPhotoOptions}>
           {displayImage ? (
             <Image source={{ uri: displayImage }} style={styles.photoPreview} />
           ) : (
             <View style={styles.photoPlaceholder}>
-              <Ionicons name="camera-outline" size={32} color={colors.textDim} />
-              <Text style={styles.photoText}>Change Photo</Text>
+              <Ionicons
+                name={
+                  post.type === 'class' ? 'people-outline'
+                  : hasCardio && !hasLifting ? 'walk-outline'
+                  : 'barbell-outline'
+                }
+                size={36}
+                color={colors.textDim}
+              />
+              <Text style={styles.photoText}>Add Photo</Text>
             </View>
           )}
         </TouchableOpacity>

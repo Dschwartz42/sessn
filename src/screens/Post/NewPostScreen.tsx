@@ -66,13 +66,26 @@ export default function NewPostScreen({ navigation }: Props) {
   const [classDescription, setClassDescription] = useState('');
   const [starRating, setStarRating] = useState(0);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      quality: 0.8,
-    });
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Allow camera access to take a photo.'); return; }
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
     if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const pickFromLibrary = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, quality: 0.8 });
+    if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const showPhotoOptions = () => {
+    const buttons: any[] = [
+      { text: 'Take Photo', onPress: takePhoto },
+      { text: 'Choose from Library', onPress: pickFromLibrary },
+    ];
+    if (imageUri) buttons.push({ text: 'Remove Photo', style: 'destructive', onPress: () => setImageUri('') });
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Photo', undefined, buttons);
   };
 
   const fetchLocation = async () => {
@@ -316,13 +329,23 @@ export default function NewPostScreen({ navigation }: Props) {
           </TouchableOpacity>
 
           {/* Photo */}
-          <TouchableOpacity style={styles.photoBtn} onPress={pickImage}>
+          <TouchableOpacity style={styles.photoBtn} onPress={showPhotoOptions}>
             {imageUri ? (
               <Image source={{ uri: imageUri }} style={styles.photoPreview} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Ionicons name="camera-outline" size={32} color={colors.textDim} />
-                <Text style={styles.photoText}>Add Photo</Text>
+                <Ionicons
+                  name={
+                    postType === 'class' ? 'people-outline'
+                    : selectedTypes.includes('Cardio') && !selectedTypes.includes('Lifting') ? 'walk-outline'
+                    : selectedTypes.includes('Lifting') ? 'barbell-outline'
+                    : selectedTypes.includes('Yoga') ? 'body-outline'
+                    : 'camera-outline'
+                  }
+                  size={36}
+                  color={colors.textDim}
+                />
+                <Text style={styles.photoText}>Add Photo (optional)</Text>
               </View>
             )}
           </TouchableOpacity>
