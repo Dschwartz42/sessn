@@ -594,11 +594,13 @@ const styles = StyleSheet.create({
   /* Leaderboard rows */
   leaderRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 10, paddingHorizontal: 16,
+    paddingVertical: 10, paddingHorizontal: 12,
+    marginHorizontal: 10, marginVertical: 2, borderRadius: 10,
   },
   leaderRowYou: {
     backgroundColor: colors.primarySoft,
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.primaryBorder,
+    borderWidth: 1, borderColor: colors.primaryBorder,
+    borderRadius: 10,
   },
   rankCircle: {
     width: 28, height: 28, borderRadius: 14,
@@ -630,7 +632,7 @@ const styles = StyleSheet.create({
   /* View all button */
   viewAllBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    margin: 6, marginHorizontal: 12, marginBottom: 12,
+    margin: 8, marginHorizontal: 10, marginTop: 6, marginBottom: 12,
     paddingVertical: 10,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
