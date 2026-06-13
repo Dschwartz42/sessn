@@ -47,7 +47,7 @@ npx expo run:ios
 
 ## Tech Stack
 
-- React Native + TypeScript + Expo SDK 52
+- React Native + TypeScript + Expo SDK 54
 - Firebase Auth + Firestore + Storage
 - React Navigation (bottom tabs + nested stacks)
 - Expo Notifications + APNs

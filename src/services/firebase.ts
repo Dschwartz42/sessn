@@ -1,5 +1,10 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeAuth, getAuth, Auth } from 'firebase/auth';
+// `getReactNativePersistence` ships in Firebase's React Native entry point, which
+// Metro resolves at runtime, but it is absent from the web type definitions the
+// TypeScript compiler sees. Pull it off the module via a typed cast so we keep the
+// real runtime behavior without a compile error.
+import * as firebaseAuth from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,12 +28,20 @@ const firebaseConfig = {
   appId: firebaseAppId,
 };
 
-let app;
-let auth;
+const getReactNativePersistence = (
+  firebaseAuth as unknown as {
+    getReactNativePersistence: (storage: typeof AsyncStorage) => unknown;
+  }
+).getReactNativePersistence;
+
+let app: FirebaseApp;
+let auth: Auth;
 
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
-  auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage) as never,
+  });
 } else {
   app = getApp();
   auth = getAuth(app);
