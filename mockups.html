@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sessn — Screen Mockups</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface-el: #1a1a1a;
+    --surface-high: #222;
+    --border: rgba(255,255,255,0.06);
+    --border-med: rgba(255,255,255,0.10);
+    --primary: #635BFF;
+    --primary-light: #8B85FF;
+    --primary-soft: rgba(99,91,255,0.12);
+    --primary-border: rgba(99,91,255,0.25);
+    --text: #fff;
+    --text-sec: rgba(255,255,255,0.6);
+    --text-dim: rgba(255,255,255,0.3);
+    --text-faint: rgba(255,255,255,0.18);
+    --red: #E84855;
+    --green: #30D158;
+    --fire: #FF8C42;
+    --fire-soft: rgba(255,120,30,0.2);
+    --fire-border: rgba(255,120,30,0.3);
+    --gold: #FFD93D;
+  }
+
+  body {
+    background: #111;
+    font-family: 'Barlow', sans-serif;
+    color: #fff;
+    padding: 48px 24px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    color: var(--primary-light);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+    margin-bottom: 48px;
+    font-family: 'Barlow', sans-serif;
+  }
+
+  .screens-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .screen-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .screen-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+
+  /* iPhone 16 Pro frame */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 50px;
+    border: 2px solid rgba(255,255,255,0.12);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  /* Notch / Dynamic Island */
+  .dynamic-island {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  .screen-content {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    padding-top: 58px; /* safe area */
+  }
+
+  /* ===== REUSABLE PARTS ===== */
+
+  .bebas { font-family: 'Bebas Neue', sans-serif; }
+  .barlow { font-family: 'Barlow', sans-serif; }
+
+  .logo-row {
+    display: flex;
+    justify-content: center;
+    padding: 14px 0 0;
+  }
+  .logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 4px;
+    color: var(--primary-light);
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10,10,10,0.97);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 28px;
+    z-index: 50;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+  }
+  .tab-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .tab-label {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 500;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+  }
+  .tab-label.active { color: var(--primary-light); }
+  .tab-icon.active { filter: none; }
+
+  .tab-post-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -24px;
+    font-size: 26px;
+    box-shadow: 0 4px 20px rgba(99,91,255,0.6);
+  }
+
+  /* ===== WELCOME SCREEN ===== */
+  .welcome-screen .screen-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 80px 32px 48px;
+  }
+  .welcome-logo-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .welcome-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 84px;
+    letter-spacing: 10px;
+    color: var(--primary-light);
+    line-height: 1;
+  }
+  .welcome-tagline {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    font-weight: 400;
+  }
+  .welcome-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .btn-primary {
+    background: var(--primary);
+    border-radius: 14px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+  .link-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+  }
+  .link-text { font-size: 14px; color: rgba(255,255,255,0.5); }
+  .link-highlight { font-size: 14px; color: var(--primary-light); font-weight: 600; }
+  .phone-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 500;
+  }
+
+  /* ===== HOME SCREEN ===== */
+  .home-screen .screen-content {
+    overflow-y: auto;
+    padding-bottom: 90px;
+    scrollbar-width: none;
+  }
+  .home-screen .screen-content::-webkit-scrollbar { display: none; }
+
+  .top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 8px;
+  }
+  .top-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar-circle {
+    width: 40px; height: 40px;
+    border-radius: 20px;
+    background: var(--primary);
+    border: 2px solid var(--primary-border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: #fff;
+    flex-shrink: 0;
+  }
+  .greeting {
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+  }
+  .notif-btn {
+    width: 40px; height: 40px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    position: relative;
+  }
+  .notif-dot {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 8px; height: 8px;
+    border-radius: 4px;
+    background: #FF4D6A;
+    border: 2px solid var(--bg);
+  }
+
+  .streak-banner {
+    margin: 8px 16px;
+    background: rgba(99,91,255,0.10);
+    border: 1px solid var(--primary-border);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .streak-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .streak-fire { font-size: 28px; line-height: 1; }
+  .streak-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .streak-sub { font-size: 13px; color: var(--text-sec); }
+  .streak-dots {
+    display: flex;
+    justify-content: space-between;
+  }
+  .streak-dot {
+    width: 28px; height: 28px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 10px;
+  }
+  .streak-dot.done { background: var(--primary); color: #fff; }
+  .streak-dot.today { background: transparent; border: 2px solid var(--primary); color: var(--primary-light); }
+  .streak-dot.upcoming { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.25); }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px 10px;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+
+  /* Post Card */
+  .post-card {
+    background: #151515;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    margin: 0 16px 16px;
+    overflow: hidden;
+  }
+  .post-image {
+    position: relative;
+    height: 260px;
+    background: var(--surface-el);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .post-image img {
+    width: 100%; height: 100%; object-fit: cover;
+    position: absolute; inset: 0;
+  }
+  .post-image-placeholder {
+    font-size: 44px;
+    color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+  }
+  .post-gradient {
+    position: absolute;
+    inset: auto 0 0;
+    height: 75%;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.65) 70%, rgba(0,0,0,0.85) 100%);
+  }
+  .post-image-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .location-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+    width: fit-content;
+  }
+  .post-workout-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1.5px;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .username-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px 0;
+  }
+  .username-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .username-text { font-weight: 600; font-size: 13px; color: rgba(255,255,255,0.7); }
+  .follow-btn {
+    background: var(--primary);
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff;
+  }
+  .date-right { display: flex; align-items: center; gap: 10px; }
+  .date-text { font-weight: 500; font-size: 12px; color: rgba(255,255,255,0.35); }
+  .more-btn { font-size: 16px; color: rgba(255,255,255,0.35); line-height: 1; }
+
+  .stats-row {
+    display: flex;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    gap: 24px;
+  }
+  .stat-item {}
+  .stat-label {
+    font-weight: 600;
+    font-size: 9px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 2px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .actions-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    gap: 20px;
+  }
+  .action { display: flex; align-items: center; gap: 6px; font-size: 20px; color: rgba(255,255,255,0.45); }
+  .action.liked { color: #FF4D6A; }
+  .action-count { font-weight: 500; font-size: 13px; color: rgba(255,255,255,0.45); }
+  .action-count.liked { color: #FF4D6A; }
+  .save-action { margin-left: auto; }
+  .action.saved { color: var(--primary-light); }
+
+  .post-caption {
+    padding: 10px 16px 0;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+  }
+  .tap-hint {
+    padding: 12px 16px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--primary-light);
+  }
+
+  /* ===== PROFILE SCREEN ===== */
+  .profile-screen .screen-content {
+    overflow-y: auto;
+    padding-bottom: 90px;
+    scrollbar-width: none;
+  }
+  .profile-screen .screen-content::-webkit-scrollbar { display: none; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .profile-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px;
+    gap: 6px;
+  }
+  .profile-pic {
+    width: 96px; height: 96px;
+    border-radius: 48px;
+    background: #151515;
+    border: 3px solid var(--primary-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px; color: var(--text-dim);
+    box-shadow: 0 0 20px rgba(99,91,255,0.3);
+    overflow: hidden;
+  }
+  .profile-pic img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-username { color: #fff; font-weight: 700; font-size: 20px; margin-top: 14px; }
+  .profile-displayname { color: rgba(255,255,255,0.5); font-weight: 500; font-size: 14px; }
+  .profile-bio { color: rgba(255,255,255,0.55); font-size: 13px; text-align: center; line-height: 1.6; max-width: 280px; padding: 0 16px; }
+
+  .streak-badge {
+    background: var(--fire-soft);
+    border-radius: 50px;
+    padding: 6px 16px;
+    border: 1px solid var(--fire-border);
+    margin-top: 4px;
+    color: var(--fire);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .profile-action-row {
+    display: flex;
+    gap: 10px;
+    padding: 18px 20px 0;
+    width: 100%;
+  }
+  .profile-btn-primary {
+    flex: 1;
+    background: var(--primary);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+  }
+  .profile-btn-secondary {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .stats-row-profile {
+    display: flex;
+    justify-content: center;
+    padding: 22px 20px 0;
+    width: 100%;
+  }
+  .stat-item-profile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .stat-lbl {
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .tab-bar-profile {
+    display: flex;
+    margin: 20px 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .tab-item-profile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    position: relative;
+  }
+  .tab-text-profile { font-weight: 700; font-size: 13px; color: rgba(255,255,255,0.35); }
+  .tab-text-profile.active { color: var(--primary-light); }
+  .tab-underline {
+    position: absolute;
+    bottom: 0; left: 20%; right: 20%;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 1px;
+  }
+
+  .photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .photo-thumb {
+    width: 126px; height: 126px;
+    background: #151515;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-thumb:nth-child(3n+2) { margin: 0 2px; }
+  .photo-thumb .barbell-icon { font-size: 22px; color: var(--text-dim); }
+  .thumb-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 6px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .thumb-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px; letter-spacing: 0.5px; color: #fff;
+  }
+  .thumb-likes { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #fff; }
+
+  /* ===== NEW POST SCREEN ===== */
+  .newpost-screen .screen-content {
+    overflow-y: auto;
+    padding-bottom: 30px;
+    scrollbar-width: none;
+  }
+  .newpost-screen .screen-content::-webkit-scrollbar { display: none; }
+
+  .np-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .np-close { font-size: 24px; color: #fff; }
+  .np-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 2px; color: #fff;
+  }
+
+  .type-toggle {
+    display: flex;
+    margin: 16px 16px 0;
+    background: var(--surface-el);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .type-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+  }
+  .type-btn.active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .np-section { padding: 20px 16px 0; }
+  .np-label {
+    font-weight: 600; font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+
+  .np-input {
+    background: var(--surface-el);
+    border: 1px solid var(--border-med);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #fff;
+    font-size: 15px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .np-input.placeholder-text { color: rgba(255,255,255,0.3); }
+
+  .photo-placeholder {
+    background: var(--surface-el);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 14px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .photo-placeholder-icon { font-size: 32px; color: var(--text-dim); }
+  .photo-placeholder-text { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+
+  .type-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding-bottom: 4px;
+  }
+  .type-chip {
+    padding: 8px 16px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.12);
+    font-weight: 600; font-size: 13px;
+    color: rgba(255,255,255,0.5);
+  }
+  .type-chip.selected {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+
+  .duration-row {
+    display: flex; gap: 10px;
+  }
+  .duration-field {
+    flex: 1;
+    background: var(--surface-el);
+    border: 1px solid var(--border-med);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #fff; font-size: 15px;
+  }
+
+  .np-post-btn {
+    margin: 24px 16px 0;
+    background: var(--primary);
+    border-radius: 14px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px; letter-spacing: 2px; color: #fff;
+  }
+
+  /* ===== COMMUNITY SCREEN ===== */
+  .community-screen .screen-content {
+    overflow-y: auto;
+    padding-bottom: 90px;
+    scrollbar-width: none;
+  }
+  .community-screen .screen-content::-webkit-scrollbar { display: none; }
+
+  .main-tabs {
+    display: flex;
+    margin: 12px 16px 0;
+    background: var(--surface-el);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .main-tab {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px;
+    border-radius: 10px;
+    font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.4);
+    font-family: 'Barlow', sans-serif;
+  }
+  .main-tab.active { background: var(--primary); color: #fff; }
+  .main-tab-icon { font-size: 16px; }
+
+  .action-row-community {
+    display: flex; gap: 10px;
+    padding: 16px 16px 0;
+  }
+  .create-btn {
+    flex: 1; background: var(--primary);
+    border-radius: 12px; padding: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-weight: 700; font-size: 14px; color: #fff;
+  }
+  .join-btn {
+    flex: 1; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.7);
+  }
+
+  .time-filter {
+    display: flex; gap: 6px;
+    padding: 12px 16px 4px;
+  }
+  .time-tab {
+    padding: 6px 14px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-weight: 600; font-size: 12px; color: rgba(255,255,255,0.4);
+  }
+  .time-tab.active {
+    background: var(--primary-soft);
+    border-color: var(--primary-border);
+    color: var(--primary-light);
+  }
+
+  .group-card {
+    display: flex; align-items: center; gap: 12px;
+    background: #151515;
+    border-radius: 14px; padding: 14px 16px;
+    border: 1px solid var(--border);
+    margin: 0 16px 10px;
+  }
+  .group-pic {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(99,91,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .group-name { font-weight: 600; font-size: 15px; color: #fff; }
+  .group-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .group-chevron { margin-left: auto; color: rgba(255,255,255,0.3); font-size: 14px; }
+
+  .leaderboard-section { padding: 16px 16px 0; }
+  .leaderboard-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: 2px; color: rgba(255,255,255,0.5);
+    margin-bottom: 10px;
+  }
+
+  .friend-streak-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rank-circle {
+    width: 32px; height: 32px; border-radius: 16px;
+    background: rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  .rank-circle.gold { background: rgba(255,217,61,0.15); color: var(--gold); }
+  .rank-circle.silver { background: rgba(192,192,192,0.15); color: #C0C0C0; }
+  .rank-circle.bronze { background: rgba(205,127,50,0.15); color: #CD7F32; }
+  .leader-avatar {
+    width: 38px; height: 38px; border-radius: 19px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+    flex-shrink: 0;
+  }
+  .leader-info { flex: 1; }
+  .leader-name { font-weight: 600; font-size: 14px; color: #fff; }
+  .leader-detail { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+  .leader-stat-wrap { text-align: right; }
+  .leader-stat {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; color: #fff; letter-spacing: 0.5px;
+  }
+  .leader-stat-unit { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; }
+  .leader-row-you { background: rgba(99,91,255,0.08); border-radius: 10px; margin: 0 4px; }
+</style>
+</head>
+<body>
+
+<h1>SESSN</h1>
+<p class="subtitle">Screen mockups — generated from source code</p>
+
+<div class="screens-grid">
+
+  <!-- ===== 1. WELCOME ===== -->
+  <div class="screen-wrapper">
+    <div class="phone welcome-screen">
+      <div class="dynamic-island"></div>
+      <div class="screen-content" style="padding:0;">
+        <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:80px 32px 48px;">
+          <div class="welcome-logo-section">
+            <div class="welcome-logo">SESSN</div>
+            <div class="welcome-tagline">Track every rep. Share every sessn.</div>
+          </div>
+          <div class="welcome-buttons">
+            <div class="btn-primary">GET STARTED</div>
+            <div class="link-row">
+              <span class="link-text">Already have an account? </span>
+              <span class="link-highlight">Log in</span>
+            </div>
+            <div class="phone-btn">Continue with Phone</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Welcome</div>
+  </div>
+
+  <!-- ===== 2. HOME ===== -->
+  <div class="screen-wrapper">
+    <div class="phone home-screen">
+      <div class="dynamic-island"></div>
+      <div class="screen-content">
+
+        <!-- Logo -->
+        <div class="logo-row"><span class="logo-text">SESSN</span></div>
+
+        <!-- Top header -->
+        <div class="top-header">
+          <div class="top-header-left">
+            <div class="avatar-circle">D</div>
+            <span class="greeting">Daniel</span>
+          </div>
+          <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+        </div>
+
+        <!-- Streak Banner -->
+        <div class="streak-banner">
+          <div class="streak-top">
+            <span class="streak-fire">🔥</span>
+            <div>
+              <div class="streak-num">3 WEEK STREAK</div>
+              <div class="streak-sub">Keep it going!</div>
+            </div>
+          </div>
+          <div class="streak-dots">
+            <div class="streak-dot done">M</div>
+            <div class="streak-dot done">T</div>
+            <div class="streak-dot done">W</div>
+            <div class="streak-dot today">T</div>
+            <div class="streak-dot upcoming">F</div>
+            <div class="streak-dot upcoming">S</div>
+            <div class="streak-dot upcoming">S</div>
+          </div>
+        </div>
+
+        <!-- Feed header -->
+        <div class="section-header">
+          <span class="section-title">YOUR FEED</span>
+        </div>
+
+        <!-- Post Card 1 -->
+        <div class="post-card">
+          <div class="post-image" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+            <div class="post-gradient"></div>
+            <div class="post-image-overlay">
+              <div class="location-pill">📍 Villanova, PA</div>
+              <div class="post-workout-title">PUSH DAY</div>
+            </div>
+          </div>
+          <div class="username-row">
+            <div class="username-left">
+              <span class="username-text">@jakefit</span>
+              <div class="follow-btn">Follow</div>
+            </div>
+            <div class="date-right">
+              <span class="date-text">6/3/26</span>
+              <span class="more-btn">···</span>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Split</div>
+              <div class="stat-value">LIFTING</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Time</div>
+              <div class="stat-value">62 MIN</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Exercises</div>
+              <div class="stat-value">8</div>
+            </div>
+          </div>
+          <div class="actions-row">
+            <div class="action liked">❤️ <span class="action-count liked">24</span></div>
+            <div class="action">🔁 <span class="action-count">3</span></div>
+            <div class="action">📤</div>
+            <div class="action save-action saved">🔖</div>
+          </div>
+          <div class="post-caption">Chest + shoulders felt great today. New PR on incline bench 🙌</div>
+          <div class="tap-hint">Tap to see workout details ›</div>
+        </div>
+
+        <!-- Post Card 2 -->
+        <div class="post-card">
+          <div class="post-image" style="background: linear-gradient(135deg, #0d2137 0%, #1a3a2a 100%);">
+            <div class="post-gradient"></div>
+            <div class="post-image-overlay">
+              <div class="post-workout-title">MORNING RUN</div>
+            </div>
+          </div>
+          <div class="username-row">
+            <div class="username-left">
+              <span class="username-text">@sarahlifts</span>
+            </div>
+            <div class="date-right">
+              <span class="date-text">6/4/26</span>
+              <span class="more-btn">···</span>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Split</div>
+              <div class="stat-value">CARDIO</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Time</div>
+              <div class="stat-value">35 MIN</div>
+            </div>
+          </div>
+          <div class="actions-row">
+            <div class="action">🤍</div>
+            <div class="action">🔁</div>
+            <div class="action">📤</div>
+            <div class="action save-action">🔖</div>
+          </div>
+          <div class="tap-hint">Tap to see workout details ›</div>
+        </div>
+
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <div class="tab-item">
+          <span class="tab-icon active" style="color:var(--primary-light)">🏠</span>
+          <span class="tab-label active">Home</span>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">🔍</span>
+          <span class="tab-label">Search</span>
+        </div>
+        <div class="tab-item">
+          <div class="tab-post-btn">＋</div>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">👥</span>
+          <span class="tab-label">Community</span>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">👤</span>
+          <span class="tab-label">Profile</span>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Home Feed</div>
+  </div>
+
+  <!-- ===== 3. NEW POST ===== -->
+  <div class="screen-wrapper">
+    <div class="phone newpost-screen">
+      <div class="dynamic-island"></div>
+      <div class="screen-content">
+
+        <!-- Header -->
+        <div class="np-header">
+          <span class="np-close">✕</span>
+          <span class="np-title">New Sessn</span>
+          <div style="width:24px"></div>
+        </div>
+
+        <!-- Type toggle -->
+        <div class="type-toggle">
+          <div class="type-btn active">Independent</div>
+          <div class="type-btn">Class</div>
+        </div>
+
+        <!-- Photo -->
+        <div class="np-section">
+          <div class="np-label">Photo</div>
+          <div class="photo-placeholder">
+            <div class="photo-placeholder-icon">📷</div>
+            <div class="photo-placeholder-text">Add a photo</div>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="np-section" style="padding-top:14px">
+          <div class="np-label">Title</div>
+          <div class="np-input">Back Day 💪</div>
+        </div>
+
+        <!-- Workout Types -->
+        <div class="np-section" style="padding-top:14px">
+          <div class="np-label">Workout Type</div>
+          <div class="type-chips">
+            <div class="type-chip">Lifting</div>
+            <div class="type-chip selected">Cardio</div>
+            <div class="type-chip">Sports</div>
+            <div class="type-chip">CrossFit</div>
+            <div class="type-chip">Yoga</div>
+            <div class="type-chip">Recovery</div>
+          </div>
+        </div>
+
+        <!-- Duration -->
+        <div class="np-section" style="padding-top:14px">
+          <div class="np-label">Duration</div>
+          <div class="duration-row">
+            <div class="duration-field np-input" style="margin-bottom:0">45</div>
+            <div class="np-input placeholder-text" style="flex:0;width:80px;margin-bottom:0">min</div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="np-section" style="padding-top:14px">
+          <div class="np-label">Location (optional)</div>
+          <div class="np-input placeholder-text">Use current location</div>
+        </div>
+
+        <!-- Caption -->
+        <div class="np-section" style="padding-top:14px">
+          <div class="np-label">Caption</div>
+          <div class="np-input placeholder-text" style="height:72px">What's on your mind?</div>
+        </div>
+
+        <div class="np-post-btn">POST SESSN</div>
+
+      </div>
+    </div>
+    <div class="screen-label">New Post</div>
+  </div>
+
+  <!-- ===== 4. PROFILE ===== -->
+  <div class="screen-wrapper">
+    <div class="phone profile-screen">
+      <div class="dynamic-island"></div>
+      <div class="screen-content">
+
+        <!-- Top bar (own) -->
+        <div class="top-bar">
+          <div style="width:40px"></div>
+          <span class="logo-text" style="font-size:32px">SESSN</span>
+          <div class="icon-btn">⚙️</div>
+        </div>
+
+        <!-- Profile info -->
+        <div class="profile-section">
+          <div class="profile-pic">👤</div>
+          <div class="profile-username">@dschwartz</div>
+          <div class="profile-displayname">Daniel Schwartzman</div>
+          <div class="profile-bio">Fitness grind 💪 Villanova '26</div>
+          <div class="streak-badge">🔥 3 Week Streak</div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="profile-action-row">
+          <div class="profile-btn-primary">Edit Profile</div>
+          <div class="profile-btn-secondary">Share Profile</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row-profile">
+          <div class="stat-item-profile">
+            <div class="stat-num">47</div>
+            <div class="stat-lbl">Posts</div>
+          </div>
+          <div class="stat-item-profile" style="border-left:1px solid var(--border);border-right:1px solid var(--border)">
+            <div class="stat-num">214</div>
+            <div class="stat-lbl">Followers</div>
+          </div>
+          <div class="stat-item-profile">
+            <div class="stat-num">189</div>
+            <div class="stat-lbl">Following</div>
+          </div>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="tab-bar-profile">
+          <div class="tab-item-profile">
+            <span class="tab-text-profile active">Posts</span>
+            <div class="tab-underline"></div>
+          </div>
+          <div class="tab-item-profile">
+            <span class="tab-text-profile">Reposts</span>
+          </div>
+          <div class="tab-item-profile">
+            <span class="tab-text-profile">Saved</span>
+          </div>
+        </div>
+
+        <!-- Photo grid -->
+        <div class="photo-grid">
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#1a1a2e,#0f3460)">
+            <div class="thumb-overlay">
+              <div class="thumb-title">PUSH DAY</div>
+              <div class="thumb-likes">❤ 24</div>
+            </div>
+          </div>
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#0d2137,#1a3a2a); margin:0 2px;">
+            <div class="thumb-overlay">
+              <div class="thumb-title">LEG DAY</div>
+              <div class="thumb-likes">❤ 18</div>
+            </div>
+          </div>
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#1a0d2e,#2d1a4a)">
+            <div class="thumb-overlay">
+              <div class="thumb-title">BACK &amp; BI</div>
+              <div class="thumb-likes">❤ 31</div>
+            </div>
+          </div>
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#0d1a2e,#152438)">
+            <div class="barbell-icon">🏋️</div>
+            <div class="thumb-overlay">
+              <div class="thumb-title">MORNING RUN</div>
+              <div class="thumb-likes">❤ 9</div>
+            </div>
+          </div>
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#1a2a0d,#253a1a); margin:0 2px;">
+            <div class="thumb-overlay">
+              <div class="thumb-title">FULL BODY</div>
+              <div class="thumb-likes">❤ 15</div>
+            </div>
+          </div>
+          <div class="photo-thumb" style="background:linear-gradient(135deg,#2a1a0d,#3a2a1a)">
+            <div class="thumb-overlay">
+              <div class="thumb-title">SHOULDERS</div>
+              <div class="thumb-likes">❤ 22</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></div>
+        <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-label">Search</span></div>
+        <div class="tab-item"><div class="tab-post-btn">＋</div></div>
+        <div class="tab-item"><span class="tab-icon">👥</span><span class="tab-label">Community</span></div>
+        <div class="tab-item">
+          <span class="tab-icon active" style="color:var(--primary-light)">👤</span>
+          <span class="tab-label active">Profile</span>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Profile</div>
+  </div>
+
+  <!-- ===== 5. COMMUNITY ===== -->
+  <div class="screen-wrapper">
+    <div class="phone community-screen">
+      <div class="dynamic-island"></div>
+      <div class="screen-content">
+
+        <div class="logo-row"><span class="logo-text">SESSN</span></div>
+
+        <!-- Main tabs -->
+        <div class="main-tabs">
+          <div class="main-tab active"><span class="main-tab-icon">👥</span> Groups</div>
+          <div class="main-tab"><span class="main-tab-icon">🗺️</span> Maps</div>
+        </div>
+
+        <!-- Create / Join -->
+        <div class="action-row-community">
+          <div class="create-btn">＋ Create Group</div>
+          <div class="join-btn">🔍 Join Group</div>
+        </div>
+
+        <!-- Section header -->
+        <div class="section-header" style="padding-top:20px;padding-bottom:4px">
+          <span class="section-title">YOUR GROUPS</span>
+        </div>
+
+        <!-- Time filter -->
+        <div class="time-filter">
+          <div class="time-tab">Weekly</div>
+          <div class="time-tab active">Monthly</div>
+          <div class="time-tab">All Time</div>
+        </div>
+
+        <!-- Group cards -->
+        <div style="padding-top:12px">
+          <div class="group-card">
+            <div class="group-pic">💪</div>
+            <div style="flex:1">
+              <div class="group-name">Villanova Lifters</div>
+              <div class="group-meta">12 members</div>
+            </div>
+            <span class="group-chevron">›</span>
+          </div>
+          <div class="group-card">
+            <div class="group-pic">🏃</div>
+            <div style="flex:1">
+              <div class="group-name">Morning Runners</div>
+              <div class="group-meta">7 members</div>
+            </div>
+            <span class="group-chevron">›</span>
+          </div>
+        </div>
+
+        <!-- Friend Streaks leaderboard -->
+        <div class="leaderboard-section">
+          <div class="leaderboard-title">FRIEND STREAKS</div>
+          <div class="friend-streak-row">
+            <div class="rank-circle gold">1</div>
+            <div class="leader-avatar" style="background:#635BFF">JF</div>
+            <div class="leader-info">
+              <div class="leader-name">jakefit</div>
+              <div class="leader-detail">3 sessns this week</div>
+            </div>
+            <div class="leader-stat-wrap">
+              <div class="leader-stat">5</div>
+              <div class="leader-stat-unit">wk streak</div>
+            </div>
+          </div>
+          <div class="friend-streak-row leader-row-you">
+            <div class="rank-circle silver">2</div>
+            <div class="leader-avatar" style="background:#8B85FF">DS</div>
+            <div class="leader-info">
+              <div class="leader-name" style="color:var(--primary-light)">dschwartz (you)</div>
+              <div class="leader-detail">2 sessns this week</div>
+            </div>
+            <div class="leader-stat-wrap">
+              <div class="leader-stat" style="color:var(--primary-light)">3</div>
+              <div class="leader-stat-unit">wk streak</div>
+            </div>
+          </div>
+          <div class="friend-streak-row">
+            <div class="rank-circle bronze">3</div>
+            <div class="leader-avatar" style="background:#30D158">SL</div>
+            <div class="leader-info">
+              <div class="leader-name">sarahlifts</div>
+            </div>
+            <div class="leader-stat-wrap">
+              <div class="leader-stat">2</div>
+              <div class="leader-stat-unit">wk streak</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></div>
+        <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-label">Search</span></div>
+        <div class="tab-item"><div class="tab-post-btn">＋</div></div>
+        <div class="tab-item">
+          <span class="tab-icon active" style="color:var(--primary-light)">👥</span>
+          <span class="tab-label active">Community</span>
+        </div>
+        <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></div>
+      </div>
+    </div>
+    <div class="screen-label">Community</div>
+  </div>
+
+</div>
+</body>
+</html>
