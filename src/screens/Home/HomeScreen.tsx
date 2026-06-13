@@ -172,8 +172,7 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Streak Banner */}
       <TouchableOpacity style={styles.streakBanner} onPress={() => navigation.navigate('Streak')} activeOpacity={0.8}>
         <View style={styles.streakTop}>
-          <Text style={styles.streakFire}>🔥</Text>
-          <View style={{ flex: 1 }}>
+<View style={{ flex: 1 }}>
             <Text style={styles.streakNum}>{streak} WEEK STREAK</Text>
             <Text style={styles.streakSub}>
             {streak === 0 ? 'Log a Sessn to start your streak.' : 'Keep it going!'}
