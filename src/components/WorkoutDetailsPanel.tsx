@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  ScrollView, TouchableWithoutFeedback,
+  ScrollView, TouchableWithoutFeedback, Animated, Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Post, Exercise, CardioDetails } from '../types';
@@ -15,6 +15,43 @@ interface Props {
 }
 
 export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Props) {
+  const slideAnim = useRef(new Animated.Value(700)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 24,
+        mass: 0.85,
+        stiffness: 230,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 230,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 700,
+        duration: 260,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onClose());
+  };
+
   const split = post.type === 'class'
     ? post.classType
     : post.split ?? post.workoutTypes?.[0] ?? '';
@@ -28,14 +65,16 @@ export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Pr
   const subtitle = subtitleParts.join(' • ');
 
   return (
-    <Modal transparent animationType="slide" visible onRequestClose={onClose}>
-      {/* 3a — Backdrop */}
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop} />
+    <Modal transparent animationType="none" visible onRequestClose={handleClose}>
+      {/* 3a — Backdrop: absolute fill so it sits behind the panel,
+          making the panel's rounded corner pixels show the dark overlay
+          instead of the underlying screen content */}
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
       </TouchableWithoutFeedback>
 
-      {/* 3b — Drop-up panel */}
-      <View style={styles.panel}>
+      {/* 3b — Drop-up panel: absolute bottom so backdrop covers corners */}
+      <Animated.View style={[styles.panel, { transform: [{ translateY: slideAnim }] }]}>
         {/* Drag handle */}
         <View style={styles.handleWrapper}>
           <View style={styles.handle} />
@@ -117,7 +156,7 @@ export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Pr
 
           <View style={{ height: 8 }} />
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -150,7 +189,6 @@ function ExerciseItem({
         ) : null}
       </View>
 
-      {/* Dropset annotation */}
       {exercise.dropset ? (
         <View style={styles.dropsetBox}>
           <View style={styles.dropsetRow}>
@@ -160,7 +198,6 @@ function ExerciseItem({
         </View>
       ) : null}
 
-      {/* Superset annotation */}
       {exercise.superset ? (
         <View style={styles.supersetBox}>
           <Text style={styles.supersetTag}>SUPERSET WITH</Text>
@@ -214,14 +251,18 @@ function CardioSection({ cardio }: { cardio: CardioDetails }) {
 }
 
 const styles = StyleSheet.create({
-  // 3a Backdrop
+  // 3a Backdrop — absolute fill so it renders behind the panel
   backdrop: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
 
-  // 3b Panel
+  // 3b Panel — absolute bottom keeps backdrop visible in corner areas
   panel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#1a1a1a',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
