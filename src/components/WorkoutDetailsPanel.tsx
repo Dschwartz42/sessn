@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  ScrollView, TouchableWithoutFeedback,
+  ScrollView, TouchableWithoutFeedback, Animated, Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Post } from '../types';
-import { colors, spacing, radius, typography } from '../utils/theme';
+import { Post, Exercise, CardioDetails } from '../types';
+import { colors } from '../utils/theme';
 
 interface Props {
   post: Post;
@@ -15,170 +15,587 @@ interface Props {
 }
 
 export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Props) {
-  return (
-    <Modal transparent animationType="slide" visible onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay} />
-      </TouchableWithoutFeedback>
-      <View style={styles.panel}>
-        <View style={styles.handle} />
+  const slideAnim = useRef(new Animated.Value(700)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 24,
+        mass: 0.85,
+        stiffness: 230,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 230,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 700,
+        duration: 260,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onClose());
+  };
+
+  const split = post.type === 'class'
+    ? post.classType
+    : post.split ?? post.workoutTypes?.[0] ?? '';
+  const exCount = post.exercises?.length ?? 0;
+  const subtitleParts = [
+    split,
+    `${post.durationMinutes} min`,
+    exCount > 0 ? `${exCount} exercise${exCount !== 1 ? 's' : ''}` : null,
+    post.cardio ? '+ cardio' : null,
+  ].filter(Boolean);
+  const subtitle = subtitleParts.join(' • ');
+
+  return (
+    <Modal transparent animationType="none" visible onRequestClose={handleClose}>
+      {/* 3a — Backdrop: absolute fill so it sits behind the panel,
+          making the panel's rounded corner pixels show the dark overlay
+          instead of the underlying screen content */}
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
+      </TouchableWithoutFeedback>
+
+      {/* 3b — Drop-up panel: absolute bottom so backdrop covers corners */}
+      <Animated.View style={[styles.panel, { transform: [{ translateY: slideAnim }] }]}>
+        {/* Drag handle */}
+        <View style={styles.handleWrapper}>
+          <View style={styles.handle} />
+        </View>
+
+        {/* 3c — Panel header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{post.title}</Text>
-          <TouchableOpacity onPress={onSave}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>{post.title?.toUpperCase()}</Text>
+            <Text style={styles.headerSubtitle}>{subtitle}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            onPress={onSave}
+          >
             <Ionicons
               name={saved ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color={saved ? colors.primary : colors.textSecondary}
+              size={16}
+              color={saved ? colors.primaryLight : '#fff'}
             />
+            <Text style={[styles.saveBtnText, saved && styles.saveBtnTextSaved]}>
+              {saved ? 'Saved' : 'Save'}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Class details */}
           {post.type === 'class' && post.classDetails ? (
-            <ClassDetails post={post} />
-          ) : (
-            <IndependentDetails post={post} />
-          )}
+            <View style={styles.classSection}>
+              <View style={styles.starRow}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < post.classDetails!.rating ? 'star' : 'star-outline'}
+                    size={16}
+                    color={i < post.classDetails!.rating ? colors.orange : colors.textDim}
+                  />
+                ))}
+              </View>
+              {post.classDetails.description ? (
+                <Text style={styles.classDesc}>{post.classDetails.description}</Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* 3d — Warmup */}
+          {post.warmupDescription ? (
+            <View style={styles.warmupSection}>
+              <Text style={styles.sectionLabel}>WARMUP</Text>
+              <Text style={styles.warmupText}>{post.warmupDescription}</Text>
+            </View>
+          ) : null}
+
+          {/* 3e — Exercise list */}
+          {post.exercises && post.exercises.length > 0 ? (
+            <View style={styles.exerciseList}>
+              {post.exercises.map((ex, i) => (
+                <ExerciseItem
+                  key={i}
+                  exercise={ex}
+                  index={i}
+                  isLast={i === post.exercises!.length - 1}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          {/* 3f — Cardio */}
+          {post.cardio ? <CardioSection cardio={post.cardio} /> : null}
+
+          {/* 3g — Instructions */}
+          {post.workoutInstructions ? (
+            <View style={styles.instructionsSection}>
+              <Text style={styles.sectionLabel}>INSTRUCTIONS</Text>
+              <Text style={styles.instructionsText}>{post.workoutInstructions}</Text>
+            </View>
+          ) : null}
+
+          <View style={{ height: 8 }} />
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
 
-function IndependentDetails({ post }: { post: Post }) {
+function ExerciseItem({
+  exercise,
+  index,
+  isLast,
+}: {
+  exercise: Exercise;
+  index: number;
+  isLast: boolean;
+}) {
   return (
-    <View style={styles.content}>
-      <InfoRow label="Duration" value={`${post.durationMinutes} min`} />
-      {post.muscleGroups && post.muscleGroups.length > 0 && (
-        <InfoRow label="Muscles" value={post.muscleGroups.join(', ')} />
-      )}
-      {post.warmupDescription && (
-        <Section title="Warm-up" content={post.warmupDescription} />
-      )}
-      {post.exercises && post.exercises.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Exercises</Text>
-          {post.exercises.map((ex, i) => (
-            <View key={i} style={styles.exerciseRow}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              <Text style={styles.exerciseStats}>
-                {ex.isBodyweight ? 'Bodyweight' : `${ex.weight ?? 0} lbs`} · {ex.sets}×{ex.reps}
-              </Text>
-              {ex.superset && <Text style={styles.exerciseNote}>Superset: {ex.superset}</Text>}
-              {ex.dropset && <Text style={styles.exerciseNote}>Dropset: {ex.dropset}</Text>}
-            </View>
-          ))}
+    <View style={[styles.exerciseItem, isLast && styles.exerciseItemLast]}>
+      <View style={styles.exerciseRow}>
+        <View style={styles.numberBadge}>
+          <Text style={styles.numberBadgeText}>{index + 1}</Text>
         </View>
-      )}
-      {post.cardio && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cardio ({post.cardio.timing})</Text>
-          <InfoRow label="Type" value={post.cardio.type} />
-          <InfoRow label="Duration" value={`${post.cardio.durationMinutes} min`} />
-          {post.cardio.distance != null && (
-            <InfoRow label="Distance" value={`${post.cardio.distance} ${post.cardio.distanceUnit ?? ''}`} />
-          )}
+        <View style={styles.exerciseInfo}>
+          <Text style={styles.exerciseName}>{exercise.name}</Text>
+          <Text style={styles.exerciseDetail}>
+            {exercise.sets} sets × {exercise.reps} reps
+          </Text>
         </View>
-      )}
-      {post.workoutInstructions && (
-        <Section title="Instructions" content={post.workoutInstructions} />
-      )}
-    </View>
-  );
-}
-
-function ClassDetails({ post }: { post: Post }) {
-  const cls = post.classDetails!;
-  return (
-    <View style={styles.content}>
-      <InfoRow label="Class" value={cls.name} />
-      <InfoRow label="Duration" value={`${post.durationMinutes} min`} />
-      <View style={styles.starRow}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <Ionicons
-            key={i}
-            name={i < cls.rating ? 'star' : 'star-outline'}
-            size={18}
-            color={i < cls.rating ? colors.orange : colors.textDim}
-          />
-        ))}
+        {exercise.isBodyweight ? (
+          <Text style={styles.exerciseWeight}>BW</Text>
+        ) : exercise.weight ? (
+          <Text style={styles.exerciseWeight}>{exercise.weight} LB</Text>
+        ) : null}
       </View>
-      <Text style={styles.classDesc}>{cls.description}</Text>
+
+      {exercise.dropset ? (
+        <View style={styles.dropsetBox}>
+          <View style={styles.dropsetRow}>
+            <Text style={styles.dropsetTag}>DROPSET</Text>
+            <Text style={styles.dropsetDetail}>{exercise.dropset}</Text>
+          </View>
+        </View>
+      ) : null}
+
+      {exercise.superset ? (
+        <View style={styles.supersetBox}>
+          <Text style={styles.supersetTag}>SUPERSET WITH</Text>
+          <View style={styles.supersetPairedRow}>
+            <Text style={styles.supersetExName}>{exercise.superset}</Text>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function CardioSection({ cardio }: { cardio: CardioDetails }) {
+  const timingLabel = cardio.timing === 'after' ? 'After Workout' : 'Before Workout';
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
-function Section({ title, content }: { title: string; content: string }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionContent}>{content}</Text>
+    <View style={styles.cardioSection}>
+      <View style={styles.cardioBadge}>
+        <Text style={styles.cardioBadgeText}>🏃 Cardio — {timingLabel}</Text>
+      </View>
+      <View style={styles.cardioStats}>
+        <View style={styles.cardioStatCard}>
+          <Text style={styles.cardioStatLabel}>TYPE</Text>
+          <Text style={styles.cardioStatType}>{cardio.type}</Text>
+        </View>
+        <View style={styles.cardioStatCard}>
+          <Text style={styles.cardioStatLabel}>DURATION</Text>
+          <Text style={styles.cardioStatDuration}>
+            {cardio.durationMinutes}
+            <Text style={styles.cardioStatUnit}> MIN</Text>
+          </Text>
+        </View>
+      </View>
+      {cardio.distance != null ? (
+        <View style={styles.cardioStats}>
+          <View style={styles.cardioStatCard}>
+            <Text style={styles.cardioStatLabel}>DISTANCE</Text>
+            <Text style={styles.cardioStatType}>
+              {cardio.distance} {cardio.distanceUnit ?? ''}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+      {cardio.instructions ? (
+        <>
+          <Text style={[styles.cardioStatLabel, { marginTop: 4 }]}>INSTRUCTIONS</Text>
+          <Text style={styles.cardioInstructions}>{cardio.instructions}</Text>
+        </>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: colors.overlay },
+  // 3a Backdrop — absolute fill so it renders behind the panel
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+
+  // 3b Panel — absolute bottom keeps backdrop visible in corner areas
   panel: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '75%',
-    paddingBottom: 40,
-    borderTopWidth: 1,
-    borderColor: colors.border,
+    paddingBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 40,
+  },
+  handleWrapper: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   handle: {
-    width: 36,
+    width: 40,
     height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderMedium,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
+
+  // 3c Header
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  title: { fontFamily: 'Barlow_600SemiBold', fontSize: 18, color: colors.text, flex: 1, marginRight: spacing.md },
-  content: { paddingHorizontal: spacing.md, gap: spacing.md },
-  section: { gap: spacing.xs },
-  sectionTitle: {
-    color: colors.textDim,
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 24,
+    letterSpacing: 1.5,
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 2,
+  },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#635BFF',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    shadowColor: '#635BFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  saveBtnSaved: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.25)',
+  },
+  saveBtnText: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 13,
+    color: '#fff',
+  },
+  saveBtnTextSaved: {
+    color: '#8B85FF',
+  },
+
+  // Class section
+  classSection: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    gap: 8,
+  },
+  starRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  classDesc: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+  },
+
+  // 3d Warmup
+  warmupSection: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+  },
+  sectionLabel: {
     fontFamily: 'Barlow_600SemiBold',
     fontSize: 10,
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
+    color: 'rgba(255,255,255,0.35)',
+    marginBottom: 6,
   },
-  sectionContent: { color: colors.text, fontFamily: 'Barlow_400Regular', fontSize: 14, lineHeight: 20 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  infoLabel: { color: colors.textSecondary, fontFamily: 'Barlow_400Regular', fontSize: 14 },
-  infoValue: { color: colors.text, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
+  warmupText: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+  },
+
+  // 3e Exercise list
+  exerciseList: {
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
+  exerciseItem: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  exerciseItemLast: {
+    borderBottomWidth: 0,
+  },
   exerciseRow: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.xs,
-    padding: spacing.sm,
-    gap: 2,
-    borderWidth: 1,
-    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
-  exerciseName: { color: colors.text, fontFamily: 'Barlow_600SemiBold', fontSize: 15 },
-  exerciseStats: { color: colors.textSecondary, fontFamily: 'Barlow_400Regular', fontSize: 13 },
-  exerciseNote: { color: colors.textDim, fontFamily: 'Barlow_400Regular', fontSize: 12 },
-  starRow: { flexDirection: 'row', gap: 4 },
-  classDesc: { color: colors.text, fontFamily: 'Barlow_400Regular', fontSize: 14, lineHeight: 20 },
+  numberBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(99,91,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numberBadgeText: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 15,
+    color: '#8B85FF',
+  },
+  exerciseInfo: {
+    flex: 1,
+  },
+  exerciseName: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 14,
+    color: '#fff',
+  },
+  exerciseDetail: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 2,
+  },
+  exerciseWeight: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.6)',
+  },
+
+  // Dropset
+  dropsetBox: {
+    marginTop: 8,
+    marginLeft: 42,
+    padding: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,165,0,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,165,0,0.25)',
+    borderRadius: 10,
+  },
+  dropsetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  dropsetTag: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: '#FFA500',
+    backgroundColor: 'rgba(255,165,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,165,0,0.3)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  dropsetDetail: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,165,0,0.85)',
+    flex: 1,
+  },
+
+  // Superset
+  supersetBox: {
+    marginTop: 8,
+    marginLeft: 42,
+    padding: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,200,150,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,200,150,0.25)',
+    borderRadius: 10,
+  },
+  supersetTag: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: '#00C896',
+    backgroundColor: 'rgba(0,200,150,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,200,150,0.3)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  supersetPairedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  supersetExName: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 13,
+    color: '#fff',
+    flex: 1,
+  },
+
+  // 3f Cardio
+  cardioSection: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(91,219,109,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(91,219,109,0.2)',
+    borderRadius: 14,
+  },
+  cardioBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(91,219,109,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(91,219,109,0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 10,
+  },
+  cardioBadgeText: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: '#5BDB6D',
+  },
+  cardioStats: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  cardioStatCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+  },
+  cardioStatLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: 'rgba(255,255,255,0.35)',
+    marginBottom: 4,
+  },
+  cardioStatType: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 14,
+    color: '#5BDB6D',
+  },
+  cardioStatDuration: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 20,
+    color: '#fff',
+  },
+  cardioStatUnit: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  cardioInstructions: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    color: 'rgba(91,219,109,0.8)',
+    lineHeight: 20,
+    marginTop: 4,
+  },
+
+  // 3g Instructions
+  instructionsSection: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
+    padding: 12,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+  },
+  instructionsText: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+  },
 });

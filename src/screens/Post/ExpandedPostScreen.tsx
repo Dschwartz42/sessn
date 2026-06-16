@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
-  Dimensions, Alert, ActivityIndicator, Linking, Platform} from 'react-native';
+  Dimensions, Alert, ActivityIndicator, Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from '../../types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { getPost, likePost, unlikePost, isLiked, savePost, unsavePost, isSaved, repostPost, deletePost } from '../../services/postService';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, spacing, radius, typography } from '../../utils/theme';
+import { colors } from '../../utils/theme';
 import WorkoutDetailsPanel from '../../components/WorkoutDetailsPanel';
 import ShareSheet from '../../components/ShareSheet';
 
@@ -27,7 +28,6 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
   const [saved, setSaved] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showShare, setShowShare] = useState(false);
-
   const [postError, setPostError] = useState(false);
 
   useEffect(() => {
@@ -66,10 +66,42 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     );
   }
 
+  const isOwn = post.authorId === user?.uid;
+
   const handleLike = async () => {
     if (!user) return;
     if (liked) { await unlikePost(post.id, user.uid); setLiked(false); setLikeCount((c) => c - 1); }
     else { await likePost(post.id, user.uid); setLiked(true); setLikeCount((c) => c + 1); }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    if (saved) { await unsavePost(post.id, user.uid); setSaved(false); }
+    else { await savePost(post.id, user.uid); setSaved(true); }
+  };
+
+  const handleRepost = async () => {
+    if (!user || !userDoc) return;
+    if (!isOwn) {
+      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
+      if (authorSnap.exists() && authorSnap.data().allowReposts === false) {
+        Alert.alert('Reposts disabled', `@${post.authorUsername} has turned off reposts.`);
+        return;
+      }
+    }
+    Alert.alert('Repost', 'Share this Sessn to your profile?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Repost',
+        onPress: async () => {
+          try {
+            await repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl);
+          } catch {
+            Alert.alert('Error', 'Could not repost. Try again.');
+          }
+        },
+      },
+    ]);
   };
 
   const handleOwnPostMenu = () => {
@@ -100,132 +132,154 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
     ]);
   };
 
-  const handleSave = async () => {
-    if (!user) return;
-    if (saved) { await unsavePost(post.id, user.uid); setSaved(false); }
-    else { await savePost(post.id, user.uid); setSaved(true); }
-  };
-
-  const handleRepost = async () => {
-    if (!user || !userDoc) return;
-    if (post.authorId !== user.uid) {
-      const authorSnap = await getDoc(doc(db, 'users', post.authorId));
-      if (authorSnap.exists() && authorSnap.data().allowReposts === false) {
-        Alert.alert('Reposts disabled', `@${post.authorUsername} has turned off reposts.`);
-        return;
-      }
-    }
-    Alert.alert('Repost', 'Share this Sessn to your profile?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Repost',
-        onPress: async () => {
-          try {
-            await repostPost(post, user.uid, userDoc.username, userDoc.profilePicUrl);
-          } catch {
-            Alert.alert('Error', 'Could not repost. Try again.');
-          }
-        },
-      },
-    ]);
-  };
-
   const handleLocation = () => {
     if (!post.location) return;
     Alert.alert('Open in Maps', 'Choose an app', [
-      {
-        text: 'Apple Maps',
-        onPress: () => Linking.openURL(`maps:?q=${post.location!.lat},${post.location!.lng}`),
-      },
-      {
-        text: 'Google Maps',
-        onPress: () => Linking.openURL(`https://maps.google.com/?q=${post.location!.lat},${post.location!.lng}`),
-      },
+      { text: 'Apple Maps', onPress: () => Linking.openURL(`maps:?q=${post.location!.lat},${post.location!.lng}`) },
+      { text: 'Google Maps', onPress: () => Linking.openURL(`https://maps.google.com/?q=${post.location!.lat},${post.location!.lng}`) },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
-  const tag = post.type === 'class' ? post.classType : post.split ?? post.workoutTypes?.join(' · ') ?? '';
+  const splitTag = post.type === 'class'
+    ? post.classType ?? ''
+    : post.split ?? post.workoutTypes?.join(' · ') ?? '';
+
+  const splitLabel = post.type === 'class' ? 'CLASS TYPE' : 'SPLIT';
+
+  const dateStr = post.createdAt?.toDate
+    ? post.createdAt.toDate().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })
+    : '';
+
+  const initials = post.authorUsername?.[0]?.toUpperCase() ?? '?';
+  const avatarColors: [string, string] = isOwn
+    ? ['#635BFF', '#8B85FF']
+    : ['#FF6B9D', '#C44DFF'];
 
   return (
     <View style={styles.container}>
-      {/* Full-screen image */}
+      {/* Background */}
       {post.imageUrl ? (
-        <Image source={{ uri: post.imageUrl }} style={styles.bgImage} />
+        <Image source={{ uri: post.imageUrl }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
       ) : (
-        <View style={[styles.bgImage, styles.bgPlaceholder]} />
+        <View style={[StyleSheet.absoluteFillObject, styles.bgPlaceholder]} />
       )}
-      <View style={styles.overlay} />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.78)']}
+        locations={[0, 0.2, 0.45, 0.65, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Top bar */}
+        {/* 2a — Top bar */}
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={20} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('UserProfile', { uid: post.authorId })}
-            style={styles.authorRow}
-          >
-            {post.authorPicUrl ? (
-              <Image source={{ uri: post.authorPicUrl }} style={styles.authorAvatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={14} color={colors.textSecondary} />
-              </View>
+          <View style={styles.topBarRight}>
+            {isOwn && (
+              <TouchableOpacity onPress={handleOwnPostMenu} style={styles.ellipsisBtn}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
+              </TouchableOpacity>
             )}
-            <Text style={styles.authorName}>{post.authorUsername}</Text>
-          </TouchableOpacity>
-          {post.authorId === user?.uid && (
-            <TouchableOpacity onPress={handleOwnPostMenu} style={styles.topBtn}>
-              <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
-            </TouchableOpacity>
-          )}
+            <Text style={styles.logo}>SESSN</Text>
+          </View>
         </View>
 
-        {/* Bottom info */}
-        <View style={styles.bottomInfo}>
-          <View style={styles.tagRow}>
-            <View style={styles.tagBadge}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-            {post.type === 'class' && post.classDetails && (
-              <View style={styles.starRow}>
-                {Array.from({ length: post.classDetails.rating }, (_, i) => (
-                  <Ionicons key={i} name="star" size={14} color={colors.orange} />
-                ))}
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.title}>{post.title}</Text>
-          {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-
-          {post.location && (
-            <TouchableOpacity style={styles.locationRow} onPress={handleLocation}>
-              <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.locationText}>{post.location.name}</Text>
-            </TouchableOpacity>
+        {/* 2b — User row */}
+        <TouchableOpacity
+          style={styles.userRow}
+          onPress={() => navigation.navigate('UserProfile', { uid: post.authorId })}
+          activeOpacity={0.8}
+        >
+          {post.authorPicUrl ? (
+            <Image source={{ uri: post.authorPicUrl }} style={styles.avatar} />
+          ) : (
+            <LinearGradient colors={avatarColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </LinearGradient>
           )}
+          <View>
+            <Text style={styles.authorName}>@{post.authorUsername}</Text>
+            <Text style={styles.authorDate}>{dateStr}</Text>
+          </View>
+        </TouchableOpacity>
 
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.action} onPress={handleLike}>
-              <Ionicons name={liked ? 'heart' : 'heart-outline'} size={26} color={liked ? colors.red : colors.text} />
-              <Text style={styles.actionCount}>{likeCount}</Text>
+        <View style={{ flex: 1 }} />
+
+        {/* 2c — Bottom content */}
+        <View style={styles.bottomContent}>
+          {/* Title / stats two-column row */}
+          <View style={styles.titleStatsRow}>
+            <View style={styles.titleColumn}>
+              {post.location?.name ? (
+                <TouchableOpacity style={styles.locationPill} onPress={handleLocation}>
+                  <Ionicons name="location" size={11} color="rgba(255,255,255,0.85)" />
+                  <Text style={styles.locationText}>{post.location.name}</Text>
+                </TouchableOpacity>
+              ) : null}
+              <Text style={styles.title}>{post.title?.toUpperCase()}</Text>
+            </View>
+            <View style={styles.statsColumn}>
+              <View style={styles.statBlock}>
+                <Text style={styles.statLabel}>{splitLabel}</Text>
+                <Text style={styles.statValue}>{String(splitTag).toUpperCase()}</Text>
+              </View>
+              <View style={styles.statBlock}>
+                <Text style={styles.statLabel}>TIME</Text>
+                <Text style={styles.statValueNum}>
+                  {post.durationMinutes}
+                  <Text style={styles.statValueUnit}> MIN</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 2d — Actions bar */}
+          <View style={styles.actionsBar}>
+            <TouchableOpacity style={styles.actionItem} onPress={handleLike}>
+              <Ionicons
+                name={liked ? 'heart' : 'heart-outline'}
+                size={22}
+                color={liked ? '#FF4D6A' : 'rgba(255,255,255,0.6)'}
+              />
+              <Text style={[styles.actionCount, liked && { color: '#FF4D6A' }]}>{likeCount}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={handleRepost}>
-              <Ionicons name="repeat" size={26} color={colors.text} />
+
+            <TouchableOpacity style={styles.actionItem} onPress={handleRepost}>
+              <Ionicons name="repeat" size={22} color="rgba(255,255,255,0.6)" />
+              {(post.repostCount ?? 0) > 0 && (
+                <Text style={styles.actionCount}>{post.repostCount}</Text>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={() => setShowShare(true)}>
-              <Ionicons name="share-outline" size={26} color={colors.text} />
+
+            <TouchableOpacity style={styles.actionItem} onPress={() => setShowShare(true)}>
+              <Ionicons name="send-outline" size={22} color="rgba(255,255,255,0.6)" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.action} onPress={handleSave}>
-              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={saved ? colors.primary : colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.detailsBtn} onPress={() => setShowDetails(true)}>
-              <Text style={styles.detailsBtnText}>Workout Details</Text>
+
+            <View style={{ flex: 1 }} />
+
+            <TouchableOpacity
+              style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+              onPress={handleSave}
+            >
+              <Ionicons
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={14}
+                color={saved ? colors.primaryLight : '#fff'}
+              />
+              <Text style={[styles.saveBtnText, saved && styles.saveBtnTextSaved]}>
+                {saved ? 'Saved' : 'Save'}
+              </Text>
             </TouchableOpacity>
           </View>
+
+          {/* 2e — View workout details */}
+          <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => setShowDetails(true)}>
+            <Text style={styles.viewDetailsBtnText}>
+              View {post.type === 'class' ? 'class' : 'workout'} details ▲
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
 
@@ -233,69 +287,242 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
         <WorkoutDetailsPanel post={post} saved={saved} onSave={handleSave} onClose={() => setShowDetails(false)} />
       )}
       {showShare && (
-        <ShareSheet type="post" postId={post.id} imageUrl={post.imageUrl} title={post.title} username={post.authorUsername} onClose={() => setShowShare(false)} />
+        <ShareSheet
+          type="post"
+          postId={post.id}
+          imageUrl={post.imageUrl}
+          title={post.title}
+          username={post.authorUsername}
+          onClose={() => setShowShare(false)}
+        />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: '#000' },
   loading: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  bgImage: { position: 'absolute', width, height, resizeMode: 'cover' },
   bgPlaceholder: { backgroundColor: colors.surfaceElevated },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  safeArea: { flex: 1, justifyContent: 'space-between' },
+
+  safeArea: { flex: 1 },
+
+  // 2a Top bar
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
-  topBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  authorAvatar: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.text },
-  avatarPlaceholder: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.surfaceElevated,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  authorName: { color: colors.text, fontFamily: 'Barlow_700Bold', fontSize: 15 },
-  bottomInfo: { padding: spacing.md, gap: spacing.sm },
-  tagRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  tagBadge: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  tagText: { color: colors.primaryLight, fontFamily: 'Barlow_600SemiBold', fontSize: 11 },
-  starRow: { flexDirection: 'row', gap: 2 },
-  title: { color: colors.text, fontFamily: 'BebasNeue_400Regular', fontSize: 32, letterSpacing: 1.5 },
-  caption: { color: 'rgba(255,255,255,0.7)', fontFamily: 'Barlow_400Regular', fontSize: 14, lineHeight: 20 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { color: 'rgba(255,255,255,0.65)', fontFamily: 'Barlow_400Regular', fontSize: 13 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.xs },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionCount: { color: colors.text, fontFamily: 'Barlow_500Medium', fontSize: 14 },
-  detailsBtn: {
-    marginLeft: 'auto',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ellipsisBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  logo: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 32,
+    letterSpacing: 4,
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 12,
+  },
+
+  // 2b User row
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarInitials: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 11,
+    color: '#fff',
+  },
+  authorName: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+  authorDate: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 1,
+  },
+
+  // 2c Bottom content
+  bottomContent: {
+    paddingHorizontal: 28,
+    paddingBottom: 2,
+  },
+  titleStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 16,
+  },
+  titleColumn: {
+    flex: 1,
+  },
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
   },
-  detailsBtnText: { color: colors.primaryLight, fontFamily: 'Barlow_600SemiBold', fontSize: 13 },
+  locationText: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  title: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 30,
+    letterSpacing: 1.5,
+    lineHeight: 29,
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 20,
+    marginBottom: 8,
+  },
+  statsColumn: {
+    flexShrink: 0,
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  statBlock: {
+    alignItems: 'flex-end',
+  },
+  statLabel: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 2,
+  },
+  statValue: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22,
+    color: '#fff',
+    textAlign: 'right',
+  },
+  statValueNum: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 26,
+    color: '#fff',
+    textAlign: 'right',
+  },
+  statValueUnit: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+  },
+
+  // 2d Actions bar
+  actionsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    marginTop: 24,
+    paddingTop: 16,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionCount: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#635BFF',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#635BFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  saveBtnSaved: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.25)',
+  },
+  saveBtnText: {
+    fontFamily: 'Barlow_700Bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+  saveBtnTextSaved: {
+    color: '#8B85FF',
+  },
+
+  // 2e View details button
+  viewDetailsBtn: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  viewDetailsBtnText: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 12,
+    color: '#8B85FF',
+  },
 });

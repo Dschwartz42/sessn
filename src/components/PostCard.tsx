@@ -142,8 +142,8 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
       {/* Repost header */}
       {post.isRepost && post.originalAuthorUsername && (
         <View style={styles.repostHeader}>
-          <Ionicons name="repeat" size={13} color="rgba(255,255,255,0.4)" />
-          <Text style={styles.repostText}>Originally by @{post.originalAuthorUsername}</Text>
+          <Ionicons name="repeat" size={14} color="rgba(255,255,255,0.4)" />
+          <Text style={styles.repostText}>Reposted by @{post.authorUsername}</Text>
         </View>
       )}
 
@@ -157,9 +157,9 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
           </View>
         )}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.85)']}
-          locations={[0, 0.35, 0.7, 1]}
-          style={styles.imageGradient}
+          colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.8)']}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.imageOverlayContent}>
           {post.location?.name ? (
@@ -203,22 +203,14 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
 
       {/* Stats row */}
       <View style={styles.statsRow}>
-        {splitLabel ? (
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>{splitLabelKey}</Text>
-            <Text style={styles.statValue}>{String(splitLabel).toUpperCase()}</Text>
-          </View>
-        ) : null}
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Time</Text>
+          <Text style={styles.statLabel}>{splitLabelKey}</Text>
+          <Text style={styles.statValue}>{String(splitLabel).toUpperCase()}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>TIME</Text>
           <Text style={styles.statValue}>{post.durationMinutes} MIN</Text>
         </View>
-        {post.exercises && post.exercises.length > 0 ? (
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Exercises</Text>
-            <Text style={styles.statValue}>{post.exercises.length}</Text>
-          </View>
-        ) : null}
       </View>
 
       {/* Action buttons */}
@@ -259,7 +251,9 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
 
       {/* Tap for details */}
       <TouchableOpacity style={styles.tapHint} onPress={() => setShowDetails(true)}>
-        <Text style={styles.tapHintText}>Tap to see workout details ›</Text>
+        <Text style={styles.tapHintText}>
+          Tap to see {post.type === 'class' ? 'class' : 'workout'} details ›
+        </Text>
       </TouchableOpacity>
 
       {showDetails && (
@@ -306,13 +300,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  imageGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '75%',
   },
   imageOverlayContent: {
     position: 'absolute',
