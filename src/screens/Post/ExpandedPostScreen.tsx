@@ -225,22 +225,13 @@ export default function ExpandedPostScreen({ navigation, route }: Props) {
                 <Text style={styles.statLabel}>{splitLabel}</Text>
                 <Text style={styles.statValue}>{String(splitTag).toUpperCase()}</Text>
               </View>
-              {post.muscleGroups && post.muscleGroups.length > 0 ? (
-                <View style={styles.statBlock}>
-                  <Text style={styles.statLabel}>MUSCLES</Text>
-                  <Text style={styles.statValue}>
-                    {post.muscleGroups.slice(0, 2).join(' · ').toUpperCase()}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.statBlock}>
-                  <Text style={styles.statLabel}>TIME</Text>
-                  <Text style={styles.statValueNum}>
-                    {post.durationMinutes}
-                    <Text style={styles.statValueUnit}> MIN</Text>
-                  </Text>
-                </View>
-              )}
+              <View style={styles.statBlock}>
+                <Text style={styles.statLabel}>TIME</Text>
+                <Text style={styles.statValueNum}>
+                  {post.durationMinutes}
+                  <Text style={styles.statValueUnit}> MIN</Text>
+                </Text>
+              </View>
             </View>
           </View>
 
