@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   // 2c Bottom content
   bottomContent: {
     paddingHorizontal: 28,
-    paddingBottom: 10,
+    paddingBottom: 2,
   },
   titleStatsRow: {
     flexDirection: 'row',
