@@ -84,6 +84,7 @@ function HomeNavigator() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="FollowerList" component={FollowerListScreen} />
       <HomeStack.Screen name="EditPost" component={EditPostScreen} />
+      <HomeStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -96,6 +97,7 @@ function SearchNavigator() {
       <SearchStack.Screen name="ExpandedPost" component={ExpandedPostScreen} />
       <SearchStack.Screen name="FollowerList" component={FollowerListScreen} />
       <SearchStack.Screen name="EditPost" component={EditPostScreen} />
+      <SearchStack.Screen name="FullLeaderboard" component={FullLeaderboardScreen} />
     </SearchStack.Navigator>
   );
 }
