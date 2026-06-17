@@ -160,6 +160,8 @@ export default function NewPostScreen({ navigation }: Props) {
       setSavedWorkouts(saved);
       setShowWorkoutChoice(false);
       setShowSavedList(true);
+    } catch (e: any) {
+      Alert.alert('Error', 'Could not load saved workouts. Please try again.');
     } finally { setLoadingSaved(false); }
   };
 

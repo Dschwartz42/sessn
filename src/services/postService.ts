@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs,
-  increment, serverTimestamp, setDoc, query, orderBy,
+  increment, serverTimestamp, setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Exercise, Post, SavedWorkout } from '../types';
@@ -168,9 +168,10 @@ export async function updatePost(
 }
 
 export async function getSavedWorkouts(uid: string): Promise<SavedWorkout[]> {
-  const q = query(collection(db, 'users', uid, 'workouts'), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })) as SavedWorkout[];
+  const snap = await getDocs(collection(db, 'users', uid, 'workouts'));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as SavedWorkout)
+    .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 }
 
 export async function saveWorkoutTemplate(uid: string, data: {
