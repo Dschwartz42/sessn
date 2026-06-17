@@ -159,6 +159,13 @@ function MainTabs({ navigation }: any) {
   );
 }
 
+const TAB_ROOT_SCREENS: Record<string, string> = {
+  HomeTab: 'Home',
+  SearchTab: 'Search',
+  CommunityTab: 'Community',
+  ProfileTab: 'Profile',
+};
+
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const tabConfig: Record<string, { active: any; inactive: any; label: string }> = {
     HomeTab: { active: 'home', inactive: 'home-outline', label: 'Home' },
@@ -178,7 +185,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!event.defaultPrevented) {
-            navigation.navigate(route.name);
+            const rootScreen = TAB_ROOT_SCREENS[route.name];
+            if (rootScreen) {
+              navigation.navigate(route.name, { screen: rootScreen });
+            } else {
+              navigation.navigate(route.name);
+            }
           }
         };
 
