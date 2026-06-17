@@ -283,22 +283,29 @@ export default function FullLeaderboardScreen({ navigation, route }: Props) {
       />
 
       {/* Dots menu */}
-      {showMenu && (
-        <View style={styles.menuOverlay}>
-          <TouchableOpacity style={styles.menuBackdrop} onPress={() => setShowMenu(false)} />
-          <View style={styles.menu}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); handleInvite(); }}>
-              <Text style={styles.menuItemText}>Invite</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); handleLeave(); }}>
-              <Text style={[styles.menuItemText, { color: colors.red }]}>Leave Group</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
-              <Text style={styles.menuItemText}>Cancel</Text>
-            </TouchableOpacity>
+      {showMenu && (() => {
+        const isMember = members.some((m) => m.uid === user?.uid);
+        return (
+          <View style={styles.menuOverlay}>
+            <TouchableOpacity style={styles.menuBackdrop} onPress={() => setShowMenu(false)} />
+            <View style={styles.menu}>
+              {isMember && (
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); handleInvite(); }}>
+                  <Text style={styles.menuItemText}>Invite</Text>
+                </TouchableOpacity>
+              )}
+              {isMember && (
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); handleLeave(); }}>
+                  <Text style={[styles.menuItemText, { color: colors.red }]}>Leave Group</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+                <Text style={styles.menuItemText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
+        );
+      })()}
     </SafeAreaView>
   );
 }

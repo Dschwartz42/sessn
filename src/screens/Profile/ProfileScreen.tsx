@@ -14,6 +14,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { UserDoc, Post, Group } from '../../types';
 import { getUserGroups } from '../../services/groupService';
 import { colors, spacing, radius } from '../../utils/theme';
+import { getSavedWorkouts } from '../../services/postService';
+import { SavedWorkout } from '../../types';
 import {
   followUser, unfollowUser, isFollowing,
   requestFollow, cancelFollowRequest, isPendingRequest,
@@ -43,6 +45,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const [requestPending, setRequestPending] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [savedWorkouts, setSavedWorkouts] = useState<SavedWorkout[]>([]);
 
   useEffect(() => {
     if (!isOwn && targetUid) {
@@ -70,6 +73,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
           return;
         }
         if (tab === 'saved') {
+          if (isOwn) getSavedWorkouts(targetUid).then((w) => setSavedWorkouts(w as any)).catch(() => {});
           const savedSnap = await getDocs(collection(db, 'users', targetUid, 'savedPosts'));
           const ids = savedSnap.docs.map((d) => d.data().postId as string);
           if (ids.length === 0) { setPosts([]); return; }
@@ -183,13 +187,19 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
         {/* Profile info */}
         <View style={styles.profileSection}>
-          {profileDoc?.profilePicUrl ? (
-            <Image source={{ uri: profileDoc.profilePicUrl }} style={styles.profilePic} />
-          ) : (
-            <View style={[styles.profilePic, styles.picPlaceholder]}>
-              <Ionicons name="person" size={38} color={colors.textDim} />
-            </View>
-          )}
+          <TouchableOpacity
+            onPress={() => { if (tab !== 'posts') setTab('posts'); }}
+            activeOpacity={tab !== 'posts' ? 0.7 : 1}
+            disabled={tab === 'posts'}
+          >
+            {profileDoc?.profilePicUrl ? (
+              <Image source={{ uri: profileDoc.profilePicUrl }} style={styles.profilePic} />
+            ) : (
+              <View style={[styles.profilePic, styles.picPlaceholder]}>
+                <Ionicons name="person" size={38} color={colors.textDim} />
+              </View>
+            )}
+          </TouchableOpacity>
 
           <Text style={styles.username}>@{profileDoc?.username}</Text>
           <Text style={styles.displayName}>{profileDoc?.displayName}</Text>
@@ -320,6 +330,21 @@ export default function ProfileScreen({ navigation, route }: Props) {
                 </TouchableOpacity>
               ))
             )}
+          </View>
+        )}
+
+        {/* Saved workout templates */}
+        {tab === 'saved' && isOwn && savedWorkouts.length > 0 && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}>
+            <Text style={styles.savedWorkoutsLabel}>SAVED WORKOUTS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+              {savedWorkouts.map((w) => (
+                <View key={w.id} style={styles.savedWorkoutChip}>
+                  <Text style={styles.savedWorkoutChipTitle} numberOfLines={1}>{w.workoutTypes?.[0] ?? 'Workout'}</Text>
+                  <Text style={styles.savedWorkoutChipMeta}>{w.durationMinutes} min · {w.exercises?.length ?? 0} ex</Text>
+                </View>
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -604,4 +629,14 @@ const styles = StyleSheet.create({
   },
   groupName: { color: colors.text, fontFamily: 'Barlow_600SemiBold', fontSize: 14 },
   groupMeta: { color: 'rgba(255,255,255,0.4)', fontFamily: 'Barlow_400Regular', fontSize: 12, marginTop: 2 },
+  savedWorkoutsLabel: {
+    fontFamily: 'Barlow_700Bold', fontSize: 11, color: 'rgba(255,255,255,0.35)',
+    textTransform: 'uppercase', letterSpacing: 1.2,
+  },
+  savedWorkoutChip: {
+    backgroundColor: '#151515', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginRight: 8, minWidth: 100,
+  },
+  savedWorkoutChipTitle: { color: '#fff', fontFamily: 'Barlow_700Bold', fontSize: 13 },
+  savedWorkoutChipMeta: { color: 'rgba(255,255,255,0.4)', fontFamily: 'Barlow_400Regular', fontSize: 11, marginTop: 2 },
 });

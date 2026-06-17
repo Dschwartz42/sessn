@@ -23,6 +23,7 @@ export default function FollowerListScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const [users, setUsers] = useState<UserDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -50,8 +51,9 @@ export default function FollowerListScreen({ navigation, route }: Props) {
           snap.docs.forEach((d) => fetched.push({ uid: d.id, ...d.data() } as UserDoc));
         }
         setUsers(fetched);
-      } catch {
-        // non-critical
+      } catch (e) {
+        console.warn('FollowerListScreen load error:', e);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -75,6 +77,11 @@ export default function FollowerListScreen({ navigation, route }: Props) {
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
+      ) : loadError ? (
+        <View style={styles.empty}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textDim} />
+          <Text style={styles.emptyText}>Could not load list. Check your connection and try again.</Text>
+        </View>
       ) : users.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="people-outline" size={48} color={colors.textDim} />
