@@ -181,17 +181,19 @@ export default function NewPostScreen({ navigation }: Props) {
   const buildExercises = (): Exercise[] =>
     exerciseEntries
       .filter((e) => e.name.trim())
-      .map((e) => ({
-        name: e.name.trim(),
-        sets: parseInt(e.sets) || 0,
-        reps: parseInt(e.reps) || 0,
-        weight: e.isBodyweight ? undefined : (parseFloat(e.weight) || undefined),
-        isBodyweight: e.isBodyweight,
-        dropset: e.hasDropset
-          ? `Starting on set ${e.dropsetStartSet} • ${e.dropsetReps} reps • ${e.dropsetLbs} lb`
-          : undefined,
-        superset: e.hasSuperset ? e.supersetName : undefined,
-      }));
+      .map((e) => {
+        const ex: Record<string, unknown> = {
+          name: e.name.trim(),
+          sets: parseInt(e.sets) || 0,
+          reps: parseInt(e.reps) || 0,
+          isBodyweight: e.isBodyweight,
+        };
+        const w = e.isBodyweight ? undefined : (parseFloat(e.weight) || undefined);
+        if (w !== undefined) ex.weight = w;
+        if (e.hasDropset) ex.dropset = `Starting on set ${e.dropsetStartSet} • ${e.dropsetReps} reps • ${e.dropsetLbs} lb`;
+        if (e.hasSuperset) ex.superset = e.supersetName;
+        return ex as unknown as Exercise;
+      });
 
   const handlePost = async () => {
     if (!user || !userDoc) return;
