@@ -673,7 +673,15 @@ export default function NewPostScreen({ navigation }: Props) {
 
               <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120, gap: 12 }} showsVerticalScrollIndicator={false}>
                 {savedWorkouts
-                  .filter((w) => !savedSearch || w.workoutTypes?.join(' ').toLowerCase().includes(savedSearch.toLowerCase()))
+                  .filter((w) => {
+                    if (!savedSearch) return true;
+                    const term = savedSearch.toLowerCase();
+                    return (
+                      (w.name ?? '').toLowerCase().includes(term) ||
+                      (w.workoutTypes?.join(' ') ?? '').toLowerCase().includes(term) ||
+                      (w.originalAuthorUsername ?? '').toLowerCase().includes(term)
+                    );
+                  })
                   .map((w) => (
                     <SavedWorkoutCard key={w.id} workout={w}
                       onUse={() => applyTemplate(w)}
