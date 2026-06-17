@@ -56,7 +56,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
   const handleSave = async () => {
     if (!user) return;
     if (saved) { await unsavePost(post.id, user.uid); setSaved(false); }
-    else { await savePost(post.id, user.uid); setSaved(true); }
+    else { await savePost(post.id, user.uid, post); setSaved(true); }
   };
 
   const handleRepost = async () => {
@@ -235,12 +235,12 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
           <Ionicons name="send-outline" size={19} color="rgba(255,255,255,0.45)" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.action, styles.saveAction]} onPress={handleSave}>
-          <Ionicons
-            name={saved ? 'bookmark' : 'bookmark-outline'}
-            size={20}
-            color={saved ? colors.primaryLight : 'rgba(255,255,255,0.45)'}
-          />
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity style={[styles.saveBtn, saved && styles.saveBtnSaved]} onPress={handleSave}>
+          <Ionicons name="bookmark" size={14} color={saved ? '#8B85FF' : '#fff'} />
+          <Text style={[styles.saveBtnText, saved && styles.saveBtnTextSaved]}>
+            {saved ? 'Saved' : 'Save'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -426,7 +426,20 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.45)',
   },
   actionCountLiked: { color: '#FF4D6A' },
-  saveAction: { marginLeft: 'auto' },
+  saveBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#635BFF', borderRadius: 10,
+    paddingHorizontal: 16, paddingVertical: 8,
+    shadowColor: '#635BFF', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35, shadowRadius: 12,
+  },
+  saveBtnSaved: {
+    backgroundColor: 'transparent',
+    borderWidth: 1, borderColor: 'rgba(99,91,255,0.25)',
+    shadowOpacity: 0,
+  },
+  saveBtnText: { fontFamily: 'Barlow_700Bold', fontSize: 12, color: '#fff' },
+  saveBtnTextSaved: { color: '#8B85FF' },
 
   // Caption
   caption: {
