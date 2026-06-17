@@ -30,13 +30,11 @@ function mondayOfWeek(date = new Date()): string {
 export { calcLbs };
 
 export async function createPost(data: Omit<Post, 'id' | 'likeCount' | 'repostCount' | 'saveCount' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'posts'), {
-    ...data,
-    likeCount: 0,
-    repostCount: 0,
-    saveCount: 0,
-    createdAt: serverTimestamp(),
-  });
+  const postData = Object.fromEntries(
+    Object.entries({ ...data, likeCount: 0, repostCount: 0, saveCount: 0, createdAt: serverTimestamp() })
+      .filter(([, v]) => v !== undefined),
+  );
+  const ref = await addDoc(collection(db, 'posts'), postData);
 
   const lbs = calcLbs(data.exercises);
   const thisWeek = mondayOfWeek();
@@ -194,10 +192,10 @@ export async function saveWorkoutTemplate(uid: string, data: {
   warmupDescription?: string;
   workoutInstructions?: string;
 }): Promise<void> {
-  await addDoc(collection(db, 'users', uid, 'workouts'), {
-    ...data,
-    createdAt: serverTimestamp(),
-  });
+  const workoutData = Object.fromEntries(
+    Object.entries({ ...data, createdAt: serverTimestamp() }).filter(([, v]) => v !== undefined),
+  );
+  await addDoc(collection(db, 'users', uid, 'workouts'), workoutData);
 }
 
 export async function getPost(postId: string): Promise<Post | null> {
@@ -239,21 +237,24 @@ export async function isSaved(postId: string, uid: string): Promise<boolean> {
 }
 
 export async function repostPost(post: Post, uid: string, username: string, profilePicUrl?: string) {
-  await addDoc(collection(db, 'posts'), {
-    ...post,
-    id: undefined,
-    authorId: uid,
-    authorUsername: username,
-    authorPicUrl: profilePicUrl ?? null,
-    isRepost: true,
-    originalPostId: post.id,
-    originalAuthorId: post.authorId,
-    originalAuthorUsername: post.authorUsername,
-    likeCount: 0,
-    repostCount: 0,
-    saveCount: 0,
-    createdAt: serverTimestamp(),
-  });
+  const { id: _id, ...postWithoutId } = post;
+  const repostData = Object.fromEntries(
+    Object.entries({
+      ...postWithoutId,
+      authorId: uid,
+      authorUsername: username,
+      authorPicUrl: profilePicUrl ?? null,
+      isRepost: true,
+      originalPostId: post.id,
+      originalAuthorId: post.authorId,
+      originalAuthorUsername: post.authorUsername,
+      likeCount: 0,
+      repostCount: 0,
+      saveCount: 0,
+      createdAt: serverTimestamp(),
+    }).filter(([, v]) => v !== undefined),
+  );
+  await addDoc(collection(db, 'posts'), repostData);
   await updateDoc(doc(db, 'posts', post.id), { repostCount: increment(1) });
   await updateDoc(doc(db, 'users', uid), { postCount: increment(1) });
 }
