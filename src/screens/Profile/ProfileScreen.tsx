@@ -671,6 +671,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 12,
     resizeMode: 'cover',
+    flexShrink: 0,
   },
   savedThumbPlaceholder: {
     backgroundColor: '#1e1e1e',
@@ -716,6 +717,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(99,91,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   savedEmpty: {
     alignItems: 'center',
