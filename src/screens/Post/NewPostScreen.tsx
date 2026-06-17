@@ -43,6 +43,8 @@ const TYPE_ICON: Record<string, any> = {
   CrossFit: 'flame-outline', Yoga: 'body-outline', Recovery: 'leaf-outline', Pilates: 'body-outline',
 };
 
+const DRUM_H = 44;
+
 // ─── Local exercise type (for editing UI) ─────────────────────────────────────
 
 interface ExerciseEntry {
@@ -75,7 +77,8 @@ export default function NewPostScreen({ navigation }: Props) {
   const [title, setTitle] = useState('');
   const [locationName, setLocationName] = useState('');
   const [caption, setCaption] = useState('');
-  const [duration, setDuration] = useState('');
+  const [durationHours, setDurationHours] = useState(0);
+  const [durationMins, setDurationMins] = useState(0);
   const [imageUri, setImageUri] = useState('');
   const [geoLocation, setGeoLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [taggedUsers, setTaggedUsers] = useState('');
@@ -153,7 +156,7 @@ export default function NewPostScreen({ navigation }: Props) {
     setLoadingSaved(true);
     try {
       const saved = await getSavedWorkouts(user.uid);
-      setSavedWorkouts(saved);
+      setSavedWorkouts(saved as any);
       setShowWorkoutChoice(false);
       setShowSavedList(true);
     } finally { setLoadingSaved(false); }
@@ -162,7 +165,10 @@ export default function NewPostScreen({ navigation }: Props) {
   const applyTemplate = (t: SavedWorkout) => {
     setShowSavedList(false);
     if (t.workoutTypes?.length) setSelectedTypes(t.workoutTypes as any);
-    if (t.durationMinutes) setDuration(String(t.durationMinutes));
+    if (t.durationMinutes) {
+      setDurationHours(Math.floor(t.durationMinutes / 60));
+      setDurationMins(t.durationMinutes % 60);
+    }
     if (t.exercises) {
       setExerciseEntries(t.exercises.map((ex) => ({
         name: ex.name, sets: String(ex.sets), reps: String(ex.reps),
@@ -198,7 +204,7 @@ export default function NewPostScreen({ navigation }: Props) {
   const handlePost = async () => {
     if (!user || !userDoc) return;
     if (!title.trim()) { Alert.alert('Error', 'Please add a title.'); return; }
-    if (!duration.trim() || parseInt(duration) <= 0) { Alert.alert('Error', 'Please enter the workout duration.'); return; }
+    if (durationHours === 0 && durationMins === 0) { Alert.alert('Error', 'Please enter the workout duration.'); return; }
     if (postType === 'independent' && selectedTypes.length === 0) { Alert.alert('Error', 'Select at least one workout type.'); return; }
     if (postType === 'class') {
       if (!selectedClassType) { Alert.alert('Error', 'Select a class type.'); return; }
@@ -230,7 +236,7 @@ export default function NewPostScreen({ navigation }: Props) {
         title: title.trim(), caption: caption.trim() || null,
         imageUrl: uploadedUrl ?? null,
         location: locationName && geoLocation ? { name: locationName, ...geoLocation } : null,
-        durationMinutes: parseInt(duration) || 0,
+        durationMinutes: durationHours * 60 + durationMins,
         exercises: exercises ?? null,
         cardio: cardioData ?? null,
         classDetails: postType === 'class'
@@ -245,7 +251,7 @@ export default function NewPostScreen({ navigation }: Props) {
       await createPost(postData);
       if (saveWorkout && postType === 'independent' && exercises) {
         await saveWorkoutTemplate(user.uid, {
-          workoutTypes: selectedTypes, split: selectedTypes[0], durationMinutes: parseInt(duration) || 0,
+          workoutTypes: selectedTypes, split: selectedTypes[0], durationMinutes: durationHours * 60 + durationMins,
           exercises, cardio: cardioData, muscleGroups: muscleGroups.length > 0 ? muscleGroups : undefined,
           warmupDescription: includeWarmup ? warmup.trim() : undefined,
           workoutInstructions: includeInstructions ? instructions.trim() : undefined,
@@ -346,8 +352,10 @@ export default function NewPostScreen({ navigation }: Props) {
               onIconPress={fetchLocation} icon="location-outline" />
             <FieldGroup label="CAPTION" placeholder={`Say something about this ${postType === 'class' ? 'class' : 'sessn'}...`}
               value={caption} onChange={setCaption} multiline />
-            <FieldGroup label={postType === 'class' ? 'CLASS LENGTH' : 'WORKOUT LENGTH'}
-              placeholder="e.g. 45 min" value={duration} onChange={setDuration} keyboardType="numeric" />
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldGroupLabel}>{postType === 'class' ? 'CLASS LENGTH' : 'WORKOUT LENGTH'}</Text>
+              <DurationPicker hours={durationHours} minutes={durationMins} onHoursChange={setDurationHours} onMinutesChange={setDurationMins} />
+            </View>
             {postType === 'class' && (
               <FieldGroup label="DESCRIPTION" placeholder="What did the class involve? Describe the workout, movements, format..."
                 value={classDescription} onChange={setClassDescription} multiline large />
@@ -715,6 +723,8 @@ function FieldGroup({ label, placeholder, value, onChange, multiline, large, key
         value={value} onChangeText={onChange}
         placeholder={placeholder} placeholderTextColor="rgba(255,255,255,0.2)"
         multiline={multiline} keyboardType={keyboardType ?? 'default'}
+        returnKeyType={multiline ? 'default' : 'done'}
+        blurOnSubmit={!multiline}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
       />
     </View>
@@ -749,10 +759,10 @@ function ExerciseEntryRow({ entry, index, isLast, onChange, onRemove }: {
           <TextInput style={s.exNameInput} value={entry.name} onChangeText={(v) => onChange({ name: v })}
             placeholder="Exercise name..." placeholderTextColor="rgba(255,255,255,0.2)" />
           <View style={s.exSRLRow}>
-            <MiniField label="SETS" value={entry.sets} onChange={(v) => onChange({ sets: v })} />
-            <MiniField label="REPS" value={entry.reps} onChange={(v) => onChange({ reps: v })} />
+            <MiniField label="SETS" value={entry.sets} onChange={(v: string) => onChange({ sets: v })} />
+            <MiniField label="REPS" value={entry.reps} onChange={(v: string) => onChange({ reps: v })} />
             <MiniField label="LBS" value={entry.isBodyweight ? 'BW' : entry.weight}
-              onChange={(v) => onChange({ weight: v })}
+              onChange={(v: string) => onChange({ weight: v })}
               editable={!entry.isBodyweight}
               accent={entry.isBodyweight ? '#8B85FF' : undefined} />
           </View>
@@ -781,11 +791,11 @@ function ExerciseEntryRow({ entry, index, isLast, onChange, onRemove }: {
           <Text style={s.dropsetLabel}>DROPSET</Text>
           <View style={s.dropsetFields}>
             <MiniFieldColored label="STARTING ON SET" value={entry.dropsetStartSet}
-              onChange={(v) => onChange({ dropsetStartSet: v })} color="#FFA500" />
+              onChange={(v: string) => onChange({ dropsetStartSet: v })} color="#FFA500" />
             <MiniFieldColored label="REPS" value={entry.dropsetReps}
-              onChange={(v) => onChange({ dropsetReps: v })} color="#FFA500" />
+              onChange={(v: string) => onChange({ dropsetReps: v })} color="#FFA500" />
             <MiniFieldColored label="LBS" value={entry.dropsetLbs}
-              onChange={(v) => onChange({ dropsetLbs: v })} color="#FFA500" />
+              onChange={(v: string) => onChange({ dropsetLbs: v })} color="#FFA500" />
           </View>
         </View>
       )}
@@ -809,7 +819,8 @@ function MiniField({ label, value, onChange, editable = true, accent }: any) {
       <TextInput style={[s.miniFieldInput, accent && { color: accent }]}
         value={value} onChangeText={onChange} keyboardType="numeric"
         placeholder="—" placeholderTextColor="rgba(255,255,255,0.15)"
-        editable={editable} textAlign="center" />
+        editable={editable} textAlign="center"
+        returnKeyType="done" blurOnSubmit />
     </View>
   );
 }
@@ -820,7 +831,8 @@ function MiniFieldColored({ label, value, onChange, color }: any) {
       <Text style={[s.miniFieldLabel, { color: `${color}80` }]}>{label}</Text>
       <TextInput style={[s.miniFieldInput, { color, width: 40 }]}
         value={value} onChangeText={onChange} keyboardType="numeric"
-        placeholder="—" placeholderTextColor={`${color}40`} textAlign="center" />
+        placeholder="—" placeholderTextColor={`${color}40`} textAlign="center"
+        returnKeyType="done" blurOnSubmit />
     </View>
   );
 }
@@ -836,51 +848,50 @@ function ChipBtn({ label, active, activeStyle, activeTextColor, onPress }: any) 
 function CardioBox({ cardioType, setCardioType, cardioDuration, setCardioDuration,
   cardioDistance, setCardioDistance, cardioTiming, setCardioTiming,
   cardioInstructions, setCardioInstructions, showTiming, standalone }: any) {
-  const Wrapper = standalone ? ({ children }: any) => <View style={s.sectionCard}>{children}</View> : ({ children }: any) => <>{children}</>;
-  return (
-    <Wrapper>
-      <View style={s.cardioBox}>
-        <View style={s.cardioBadge}><Text style={s.cardioBadgeText}>CARDIO</Text></View>
-        <Text style={s.subLabel}>CARDIO TYPE</Text>
-        <View style={s.chipGrid}>
-          {CARDIO_TYPES_LIST.map((t) => {
-            const sel = cardioType === t;
-            return (
-              <TouchableOpacity key={t}
-                style={[s.chip, sel && { backgroundColor: 'rgba(91,219,109,0.1)', borderColor: 'rgba(91,219,109,0.3)' }]}
-                onPress={() => setCardioType(t)}>
-                <Text style={[s.chipText, sel && { color: '#5BDB6D' }]}>{t}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        <Text style={s.subLabel}>DURATION</Text>
-        <View style={s.cardioDurationBox}>
-          <TextInput style={s.cardioDurationInput} value={cardioDuration} onChangeText={setCardioDuration}
-            keyboardType="numeric" placeholder="e.g. 15 min" placeholderTextColor="rgba(255,255,255,0.2)" />
-        </View>
-        {showTiming && (
-          <>
-            <Text style={s.subLabel}>BEFORE OR AFTER WORKOUT</Text>
-            <View style={s.timingToggle}>
-              {(['before', 'after'] as const).map((t) => (
-                <TouchableOpacity key={t} style={[s.timingOption, cardioTiming === t && s.timingOptionActive]}
-                  onPress={() => setCardioTiming(t)}>
-                  <Text style={[s.timingOptionText, cardioTiming === t && s.timingOptionTextActive]}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-        <Text style={s.subLabel}>OPTIONAL CARDIO INSTRUCTIONS</Text>
-        <TextInput style={s.cardioInstrInput} value={cardioInstructions} onChangeText={setCardioInstructions}
-          multiline placeholder="e.g. HIIT intervals, steady state, incline walk..."
-          placeholderTextColor="rgba(255,255,255,0.2)" />
+  const inner = (
+    <View style={s.cardioBox}>
+      <View style={s.cardioBadge}><Text style={s.cardioBadgeText}>CARDIO</Text></View>
+      <Text style={s.subLabel}>CARDIO TYPE</Text>
+      <View style={s.chipGrid}>
+        {CARDIO_TYPES_LIST.map((t) => {
+          const sel = cardioType === t;
+          return (
+            <TouchableOpacity key={t}
+              style={[s.chip, sel && { backgroundColor: 'rgba(91,219,109,0.1)', borderColor: 'rgba(91,219,109,0.3)' }]}
+              onPress={() => setCardioType(t)}>
+              <Text style={[s.chipText, sel && { color: '#5BDB6D' }]}>{t}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-    </Wrapper>
+      <Text style={s.subLabel}>DURATION</Text>
+      <View style={s.cardioDurationBox}>
+        <TextInput style={s.cardioDurationInput} value={cardioDuration} onChangeText={setCardioDuration}
+          keyboardType="numeric" returnKeyType="done" placeholder="e.g. 15 min" placeholderTextColor="rgba(255,255,255,0.2)" />
+      </View>
+      {showTiming && (
+        <>
+          <Text style={s.subLabel}>BEFORE OR AFTER WORKOUT</Text>
+          <View style={s.timingToggle}>
+            {(['before', 'after'] as const).map((t) => (
+              <TouchableOpacity key={t} style={[s.timingOption, cardioTiming === t && s.timingOptionActive]}
+                onPress={() => setCardioTiming(t)}>
+                <Text style={[s.timingOptionText, cardioTiming === t && s.timingOptionTextActive]}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+      <Text style={s.subLabel}>OPTIONAL CARDIO INSTRUCTIONS</Text>
+      <TextInput style={s.cardioInstrInput} value={cardioInstructions} onChangeText={setCardioInstructions}
+        multiline placeholder="e.g. HIIT intervals, steady state, incline walk..."
+        placeholderTextColor="rgba(255,255,255,0.2)" />
+    </View>
   );
+  if (standalone) return <View style={s.sectionCard}>{inner}</View>;
+  return inner;
 }
 
 function BottomSheetModal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
@@ -944,6 +955,62 @@ function SavedWorkoutCard({ workout, onUse, onPreview }: { workout: SavedWorkout
         <TouchableOpacity style={s.useThisCardBtn} onPress={onUse} activeOpacity={0.85}>
           <Text style={s.useThisCardBtnText}>Use This</Text>
         </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function DrumScroll({ count, selected, onChange }: { count: number; selected: number; onChange: (v: number) => void }) {
+  const ref = useRef<ScrollView>(null);
+  useEffect(() => {
+    setTimeout(() => ref.current?.scrollTo({ y: selected * DRUM_H, animated: false }), 80);
+  }, []);
+  return (
+    <ScrollView
+      ref={ref}
+      style={{ height: DRUM_H * 3 }}
+      showsVerticalScrollIndicator={false}
+      snapToInterval={DRUM_H}
+      decelerationRate="fast"
+      nestedScrollEnabled
+      contentContainerStyle={{ paddingVertical: DRUM_H }}
+      onMomentumScrollEnd={(e) => {
+        const idx = Math.round(e.nativeEvent.contentOffset.y / DRUM_H);
+        onChange(Math.max(0, Math.min(count - 1, idx)));
+      }}
+    >
+      {(Array.from({ length: count }, (_, i) => i) as number[]).map((v) => (
+        <View key={v} style={{ height: DRUM_H, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={[s.drumItem, v === selected && s.drumItemSelected]}>
+            {String(v).padStart(2, '0')}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+function DurationPicker({ hours, minutes, onHoursChange, onMinutesChange }: {
+  hours: number; minutes: number;
+  onHoursChange: (h: number) => void;
+  onMinutesChange: (m: number) => void;
+}) {
+  return (
+    <View style={s.durationPickerRow}>
+      <View style={s.drumCol}>
+        <View style={s.drumWrapper}>
+          <View style={s.drumHighlight} pointerEvents="none" />
+          <DrumScroll count={24} selected={hours} onChange={onHoursChange} />
+        </View>
+        <Text style={s.drumLabel}>HRS</Text>
+      </View>
+      <Text style={s.drumColon}>:</Text>
+      <View style={s.drumCol}>
+        <View style={s.drumWrapper}>
+          <View style={s.drumHighlight} pointerEvents="none" />
+          <DrumScroll count={60} selected={minutes} onChange={onMinutesChange} />
+        </View>
+        <Text style={s.drumLabel}>MIN</Text>
       </View>
     </View>
   );
@@ -1333,4 +1400,26 @@ const s = StyleSheet.create({
   previewNumText: { fontFamily: 'BebasNeue_400Regular', fontSize: 14, color: '#8B85FF' },
   previewExName: { flex: 1, fontFamily: 'Barlow_600SemiBold', fontSize: 13, color: '#fff' },
   previewExDetail: { fontFamily: 'Barlow_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.4)' },
+
+  // Duration drum picker
+  durationPickerRow: {
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 8, paddingBottom: 4, gap: 8,
+  },
+  drumCol: { alignItems: 'center' },
+  drumWrapper: { width: 88, height: DRUM_H * 3, overflow: 'hidden', position: 'relative' },
+  drumHighlight: {
+    position: 'absolute', zIndex: 1, top: DRUM_H, left: 0, right: 0, height: DRUM_H,
+    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  },
+  drumLabel: {
+    fontFamily: 'Barlow_600SemiBold', fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginTop: 6,
+  },
+  drumColon: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 36, color: 'rgba(255,255,255,0.5)', marginTop: DRUM_H,
+  },
+  drumItem: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'rgba(255,255,255,0.18)', textAlign: 'center', width: 88,
+  },
+  drumItemSelected: { color: '#fff' },
 });

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  ScrollView, TouchableWithoutFeedback, Animated, Easing,
+  ScrollView, TouchableWithoutFeedback, Animated, Easing, PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Post, Exercise, CardioDetails } from '../types';
@@ -17,6 +17,27 @@ interface Props {
 export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Props) {
   const slideAnim = useRef(new Animated.Value(700)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const panY = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 8 && Math.abs(gs.dy) > Math.abs(gs.dx),
+      onPanResponderMove: (_, gs) => { if (gs.dy > 0) panY.setValue(gs.dy); },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 80 || gs.vy > 0.5) {
+          Animated.parallel([
+            Animated.timing(panY, { toValue: 700, duration: 220, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
+          ]).start(() => onClose());
+        } else {
+          Animated.spring(panY, { toValue: 0, useNativeDriver: true, damping: 20, stiffness: 200 }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(panY, { toValue: 0, useNativeDriver: true, damping: 20, stiffness: 200 }).start();
+      },
+    })
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -74,9 +95,9 @@ export default function WorkoutDetailsPanel({ post, saved, onSave, onClose }: Pr
       </TouchableWithoutFeedback>
 
       {/* 3b — Drop-up panel: absolute bottom so backdrop covers corners */}
-      <Animated.View style={[styles.panel, { transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[styles.panel, { transform: [{ translateY: Animated.add(slideAnim, panY) }] }]}>
         {/* Drag handle */}
-        <View style={styles.handleWrapper}>
+        <View style={styles.handleWrapper} {...panResponder.panHandlers}>
           <View style={styles.handle} />
         </View>
 
