@@ -20,6 +20,19 @@ import {
 } from '../../services/followService';
 import { blockUser, unblockUser, isBlocked } from '../../services/blockService';
 import ShareSheet from '../../components/ShareSheet';
+import { unsavePost } from '../../services/postService';
+
+function timeAgo(ts: any): string {
+  if (!ts?.toDate) return '';
+  const diff = Date.now() - ts.toDate().getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  return `${Math.floor(d / 7)}w`;
+}
 
 const { width } = Dimensions.get('window');
 const GAP = 2;
@@ -110,6 +123,12 @@ export default function ProfileScreen({ navigation, route }: Props) {
       await followUser(user.uid, targetUid);
       setFollowing(true);
     }
+  };
+
+  const handleUnsaveSavedPost = async (postId: string) => {
+    if (!user) return;
+    await unsavePost(postId, user.uid);
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
   };
 
   const handleBlock = async () => {
@@ -323,39 +342,84 @@ export default function ProfileScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        {/* Grid */}
-        <View style={styles.grid}>
-          {tab !== 'groups' && posts.map((p, idx) => (
-            <TouchableOpacity
-              key={p.id}
-              style={[
-                styles.thumb,
-                idx % 3 === 1 && { marginHorizontal: GAP },
-              ]}
-              onPress={() => navigation.navigate('ExpandedPost', { postId: p.id })}
-            >
-              {p.imageUrl ? (
-                <Image source={{ uri: p.imageUrl }} style={styles.thumbImage} />
-              ) : (
-                <View style={[styles.thumbImage, styles.thumbPlaceholder]}>
-                  <Ionicons name="barbell-outline" size={22} color={colors.textDim} />
-                </View>
-              )}
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                style={styles.thumbOverlay}
+        {/* Saved posts list */}
+        {tab === 'saved' && (
+          <View style={styles.savedList}>
+            {posts.length === 0 ? (
+              <View style={styles.savedEmpty}>
+                <Ionicons name="bookmark-outline" size={36} color="rgba(255,255,255,0.2)" />
+                <Text style={styles.savedEmptyText}>No saved sessns yet.</Text>
+              </View>
+            ) : posts.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.savedItem}
+                onPress={() => navigation.navigate('ExpandedPost', { postId: p.id })}
+                activeOpacity={0.8}
               >
-                <Text style={styles.thumbTitle} numberOfLines={1}>{p.title}</Text>
-                {p.likeCount != null && (
-                  <View style={styles.thumbLikes}>
-                    <Ionicons name="heart" size={10} color="#fff" />
-                    <Text style={styles.thumbLikeCount}>{p.likeCount}</Text>
+                {p.imageUrl ? (
+                  <Image source={{ uri: p.imageUrl }} style={styles.savedThumb} />
+                ) : (
+                  <View style={[styles.savedThumb, styles.savedThumbPlaceholder]}>
+                    <Ionicons name="barbell-outline" size={20} color="rgba(255,255,255,0.3)" />
                   </View>
                 )}
-              </LinearGradient>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <View style={styles.savedInfo}>
+                  <Text style={styles.savedTitle} numberOfLines={1}>{p.title}</Text>
+                  <View style={styles.savedMeta}>
+                    <Text style={styles.savedMetaText}>{p.workoutTypes?.[0] ?? p.classType ?? 'Workout'}</Text>
+                    <View style={styles.savedMetaDot} />
+                    <Text style={styles.savedMetaText}>{timeAgo(p.createdAt)}</Text>
+                  </View>
+                  <Text style={styles.savedAuthor}>@{p.authorUsername}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.savedBookmark}
+                  onPress={() => handleUnsaveSavedPost(p.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="bookmark" size={14} color="#8B85FF" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Grid for posts/reposts */}
+        {tab !== 'groups' && tab !== 'saved' && (
+          <View style={styles.grid}>
+            {posts.map((p, idx) => (
+              <TouchableOpacity
+                key={p.id}
+                style={[
+                  styles.thumb,
+                  idx % 3 === 1 && { marginHorizontal: GAP },
+                ]}
+                onPress={() => navigation.navigate('ExpandedPost', { postId: p.id })}
+              >
+                {p.imageUrl ? (
+                  <Image source={{ uri: p.imageUrl }} style={styles.thumbImage} />
+                ) : (
+                  <View style={[styles.thumbImage, styles.thumbPlaceholder]}>
+                    <Ionicons name="barbell-outline" size={22} color={colors.textDim} />
+                  </View>
+                )}
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.thumbOverlay}
+                >
+                  <Text style={styles.thumbTitle} numberOfLines={1}>{p.title}</Text>
+                  {p.likeCount != null && (
+                    <View style={styles.thumbLikes}>
+                      <Ionicons name="heart" size={10} color="#fff" />
+                      <Text style={styles.thumbLikeCount}>{p.likeCount}</Text>
+                    </View>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {showShare && (
@@ -585,6 +649,83 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'Barlow_400Regular',
     fontSize: 10,
+  },
+  savedList: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 120,
+    gap: 10,
+  },
+  savedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+  },
+  savedThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
+  savedThumbPlaceholder: {
+    backgroundColor: '#1e1e1e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savedInfo: { flex: 1, minWidth: 0 },
+  savedTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 17,
+    letterSpacing: 0.8,
+    color: '#fff',
+    marginBottom: 3,
+  },
+  savedMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  savedMetaText: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+  },
+  savedMetaDot: {
+    width: 3,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 1.5,
+  },
+  savedAuthor: {
+    fontFamily: 'Barlow_600SemiBold',
+    fontSize: 11,
+    color: '#8B85FF',
+    marginTop: 3,
+  },
+  savedBookmark: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(99,91,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,91,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savedEmpty: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 10,
+  },
+  savedEmptyText: {
+    fontFamily: 'Barlow_400Regular',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.35)',
   },
   groupRow: {
     flexDirection: 'row',

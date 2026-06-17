@@ -109,6 +109,10 @@ export default function NewPostScreen({ navigation }: Props) {
   const [savedSearch, setSavedSearch] = useState('');
   const [previewWorkout, setPreviewWorkout] = useState<SavedWorkout | null>(null);
 
+  // template tracking
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
+  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
+
   const needsLifting = selectedTypes.includes('Lifting');
   const needsCardioOnly = selectedTypes.includes('Cardio') && !selectedTypes.includes('Lifting') && postType === 'independent';
   const needsSports = selectedTypes.includes('Sports');
@@ -166,7 +170,7 @@ export default function NewPostScreen({ navigation }: Props) {
     if (t.exercises) {
       setExerciseEntries(t.exercises.map((ex) => ({
         name: ex.name, sets: String(ex.sets), reps: String(ex.reps),
-        weight: ex.weight != null ? String(ex.weight) : '',
+        weight: '',
         isBodyweight: ex.isBodyweight,
         hasDropset: !!ex.dropset, dropsetStartSet: '', dropsetReps: '', dropsetLbs: '',
         hasSuperset: !!ex.superset, supersetName: ex.superset ?? '',
@@ -175,6 +179,8 @@ export default function NewPostScreen({ navigation }: Props) {
     if (t.muscleGroups) setMuscleGroups(t.muscleGroups);
     if (t.warmupDescription) { setIncludeWarmup(true); setWarmup(t.warmupDescription); }
     if (t.workoutInstructions) { setIncludeInstructions(true); setInstructions(t.workoutInstructions); }
+    setSelectedTemplateName(t.name ?? t.workoutTypes?.[0] ?? 'Saved Workout');
+    setIsUsingTemplate(true);
     setStep(2);
   };
 
@@ -245,6 +251,7 @@ export default function NewPostScreen({ navigation }: Props) {
       await createPost(postData);
       if (saveWorkout && postType === 'independent' && exercises) {
         await saveWorkoutTemplate(user.uid, {
+          name: title.trim(),
           workoutTypes: selectedTypes, split: selectedTypes[0], durationMinutes: parseInt(duration) || 0,
           exercises, cardio: cardioData, muscleGroups: muscleGroups.length > 0 ? muscleGroups : undefined,
           warmupDescription: includeWarmup ? warmup.trim() : undefined,
@@ -416,13 +423,32 @@ export default function NewPostScreen({ navigation }: Props) {
       ) : (
         /* ─── Step 2 ─── */
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Using saved workout badge */}
+          {isUsingTemplate && selectedTemplateName && (
+            <View style={s.templateBadge}>
+              <Ionicons name="bookmark" size={16} color="#FFD93D" />
+              <Text style={s.templateBadgeText}>
+                Using saved workout:{' '}
+                <Text style={s.templateBadgeName}>{selectedTemplateName}</Text>
+              </Text>
+            </View>
+          )}
+
           {/* Lifting section */}
           {needsLifting && (
             <View style={s.sectionCard}>
-              <View style={s.sectionCardHeader}>
+              <View style={[s.sectionCardHeader, isUsingTemplate && s.sectionCardHeaderBordered]}>
                 <View style={s.typeBadge}>
-                  <Text style={[s.typeBadgeText, { color: '#5B8CFF' }]}>Lifting</Text>
+                  <Text style={[s.typeBadgeText, { color: '#5B8CFF' }]}>🏋️ Lifting</Text>
                 </View>
+                {isUsingTemplate && (
+                  <Text style={s.sectionCardSummary}>
+                    {[
+                      muscleGroups.slice(0, 2).join(' & '),
+                      `${exerciseEntries.filter((e) => e.name).length} exercises`,
+                    ].filter(Boolean).join(' • ')}
+                  </Text>
+                )}
               </View>
 
               {/* Muscle groups */}
@@ -456,11 +482,16 @@ export default function NewPostScreen({ navigation }: Props) {
               )}
 
               {/* Exercises */}
-              <Text style={[s.subLabel, { marginTop: 4 }]}>EXERCISES</Text>
+              {isUsingTemplate ? (
+                <Text style={s.fillWeightsLabel}>Fill in your weights</Text>
+              ) : (
+                <Text style={[s.subLabel, { marginTop: 4 }]}>EXERCISES</Text>
+              )}
               <View style={s.exerciseList}>
                 {exerciseEntries.map((ex, i) => (
                   <ExerciseEntryRow key={i} entry={ex} index={i}
                     isLast={i === exerciseEntries.length - 1}
+                    isFromTemplate={isUsingTemplate}
                     onChange={(patch) => updateExercise(i, patch)}
                     onRemove={() => setExerciseEntries((p) => p.filter((_, idx) => idx !== i))}
                   />
@@ -668,7 +699,7 @@ export default function NewPostScreen({ navigation }: Props) {
           <View style={s.choiceDragHandle} />
           <View style={s.previewHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={s.previewTitle}>{(previewWorkout.workoutTypes?.[0] ?? 'Workout').toUpperCase()}</Text>
+              <Text style={s.previewTitle}>{(previewWorkout.name ?? previewWorkout.workoutTypes?.[0] ?? 'Workout').toUpperCase()}</Text>
               <Text style={s.previewSub}>{previewWorkout.durationMinutes} min · {previewWorkout.exercises?.length ?? 0} exercises</Text>
             </View>
             <TouchableOpacity style={s.useThisBtn} onPress={() => { setPreviewWorkout(null); applyTemplate(previewWorkout); }}>
@@ -737,8 +768,8 @@ function AnimatedToggle({ value, onToggle, activeColor }: { value: boolean; onTo
   );
 }
 
-function ExerciseEntryRow({ entry, index, isLast, onChange, onRemove }: {
-  entry: ExerciseEntry; index: number; isLast: boolean;
+function ExerciseEntryRow({ entry, index, isLast, isFromTemplate, onChange, onRemove }: {
+  entry: ExerciseEntry; index: number; isLast: boolean; isFromTemplate: boolean;
   onChange: (p: Partial<ExerciseEntry>) => void; onRemove: () => void;
 }) {
   return (
@@ -754,7 +785,8 @@ function ExerciseEntryRow({ entry, index, isLast, onChange, onRemove }: {
             <MiniField label="LBS" value={entry.isBodyweight ? 'BW' : entry.weight}
               onChange={(v) => onChange({ weight: v })}
               editable={!entry.isBodyweight}
-              accent={entry.isBodyweight ? '#8B85FF' : undefined} />
+              accent={entry.isBodyweight ? '#8B85FF' : undefined}
+              emptyTemplate={isFromTemplate && !entry.isBodyweight && !entry.weight} />
           </View>
           <View style={s.exChipRow}>
             <ChipBtn label="Bodyweight" active={entry.isBodyweight}
@@ -802,13 +834,14 @@ function ExerciseEntryRow({ entry, index, isLast, onChange, onRemove }: {
   );
 }
 
-function MiniField({ label, value, onChange, editable = true, accent }: any) {
+function MiniField({ label, value, onChange, editable = true, accent, emptyTemplate }: any) {
   return (
-    <View style={s.miniField}>
-      <Text style={s.miniFieldLabel}>{label}</Text>
+    <View style={[s.miniField, emptyTemplate && s.miniFieldEmptyTemplate]}>
+      <Text style={[s.miniFieldLabel, emptyTemplate && s.miniFieldLabelTemplate]}>{label}</Text>
       <TextInput style={[s.miniFieldInput, accent && { color: accent }]}
         value={value} onChangeText={onChange} keyboardType="numeric"
-        placeholder="—" placeholderTextColor="rgba(255,255,255,0.15)"
+        placeholder={emptyTemplate ? '?' : '—'}
+        placeholderTextColor={emptyTemplate ? '#8B85FF' : 'rgba(255,255,255,0.15)'}
         editable={editable} textAlign="center" />
     </View>
   );
@@ -917,7 +950,7 @@ function SavedWorkoutCard({ workout, onUse, onPreview }: { workout: SavedWorkout
     <View style={s.savedCard}>
       <View style={s.savedCardHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={s.savedCardTitle}>{workout.workoutTypes?.[0] ?? 'Workout'}</Text>
+          <Text style={s.savedCardTitle}>{workout.name ?? workout.workoutTypes?.[0] ?? 'Workout'}</Text>
           <Text style={s.savedCardMeta}>
             {[workout.split, `${workout.durationMinutes} min`, `${workout.exercises?.length ?? 0} exercises`]
               .filter(Boolean).join(' · ')}
@@ -1059,12 +1092,37 @@ const s = StyleSheet.create({
   },
   mainBtnText: { fontFamily: 'Barlow_700Bold', fontSize: 15, color: '#fff', letterSpacing: 0.5 },
 
+  // Template badge (using saved workout)
+  templateBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginHorizontal: 16, marginBottom: 16, marginTop: 4,
+    padding: 10, paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,217,61,0.1)',
+    borderWidth: 1, borderColor: 'rgba(255,217,61,0.3)', borderRadius: 12,
+  },
+  templateBadgeText: {
+    fontFamily: 'Barlow_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.6)', flex: 1,
+  },
+  templateBadgeName: { fontFamily: 'Barlow_700Bold', color: '#FFD93D' },
+
+  // Fill in weights label
+  fillWeightsLabel: {
+    fontFamily: 'Barlow_700Bold', fontSize: 12, textTransform: 'uppercase',
+    letterSpacing: 1.5, color: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8,
+  },
+
   // Section card (Step 2)
   sectionCard: {
     backgroundColor: '#151515', borderRadius: 16, overflow: 'hidden',
     marginHorizontal: 16, marginBottom: 20,
   },
   sectionCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
+  sectionCardHeaderBordered: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  sectionCardSummary: {
+    fontFamily: 'Barlow_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.35)',
+    flex: 1, textAlign: 'right',
+  },
   typeBadge: {
     backgroundColor: 'rgba(91,140,255,0.1)', borderWidth: 1, borderColor: 'rgba(91,140,255,0.3)',
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3,
@@ -1129,7 +1187,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
   },
   miniFieldLabel: { fontFamily: 'Barlow_600SemiBold', fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.5 },
+  miniFieldLabelTemplate: { color: '#8B85FF' },
   miniFieldInput: { fontFamily: 'Barlow_600SemiBold', fontSize: 13, color: '#fff', width: 36, padding: 0 },
+  miniFieldEmptyTemplate: { borderColor: 'rgba(99,91,255,0.25)', backgroundColor: 'rgba(99,91,255,0.12)' },
   exChipRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
   exChip: {
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,

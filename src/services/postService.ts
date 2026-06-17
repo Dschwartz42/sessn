@@ -3,7 +3,7 @@ import {
   increment, serverTimestamp, setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Exercise, Post } from '../types';
+import { Exercise, Post, SavedWorkout } from '../types';
 
 function calcLbs(exercises: Exercise[] = []): number {
   return exercises.reduce((sum, ex) => {
@@ -167,22 +167,13 @@ export async function updatePost(
   }
 }
 
-export async function getSavedWorkouts(uid: string) {
+export async function getSavedWorkouts(uid: string): Promise<SavedWorkout[]> {
   const snap = await getDocs(collection(db, 'users', uid, 'workouts'));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<{
-    id: string;
-    workoutTypes: Post['workoutTypes'];
-    split?: string;
-    durationMinutes: number;
-    exercises?: import('../types').Exercise[];
-    cardio?: Post['cardio'];
-    muscleGroups?: string[];
-    warmupDescription?: string;
-    workoutInstructions?: string;
-  }>;
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })) as SavedWorkout[];
 }
 
 export async function saveWorkoutTemplate(uid: string, data: {
+  name?: string;
   workoutTypes: Post['workoutTypes'];
   split?: string;
   durationMinutes: number;

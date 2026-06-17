@@ -104,7 +104,7 @@ export interface Post {
 
 export interface SavedWorkout {
   id: string;
-  name: string;
+  name?: string;
   workoutTypes: WorkoutType[];
   split?: string;
   durationMinutes: number;
