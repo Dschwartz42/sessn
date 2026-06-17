@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  collection, query, where, getDocs, doc, getDoc,
+  collection, query, where, getDocs, doc, getDoc, updateDoc,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -61,6 +61,32 @@ export default function ProfileScreen({ navigation, route }: Props) {
       setProfileDoc(currentUserDoc);
     }
   }, [targetUid, currentUserDoc]);
+
+  // Heal follower/following counters if Firestore doc is out of sync with actual follows
+  useEffect(() => {
+    if (!targetUid) return;
+    const syncCounts = async () => {
+      try {
+        const [followerSnap, followingSnap] = await Promise.all([
+          getDocs(query(collection(db, 'follows'), where('followeeId', '==', targetUid))),
+          getDocs(query(collection(db, 'follows'), where('followerId', '==', targetUid))),
+        ]);
+        const actualFollowers = followerSnap.size;
+        const actualFollowing = followingSnap.size;
+        const docFollowers = isOwn ? (currentUserDoc?.followersCount ?? 0) : (profileDoc?.followersCount ?? 0);
+        const docFollowing = isOwn ? (currentUserDoc?.followingCount ?? 0) : (profileDoc?.followingCount ?? 0);
+        if (actualFollowers !== docFollowers || actualFollowing !== docFollowing) {
+          await updateDoc(doc(db, 'users', targetUid), {
+            followersCount: actualFollowers,
+            followingCount: actualFollowing,
+          });
+        }
+      } catch {
+        // non-critical
+      }
+    };
+    syncCounts();
+  }, [targetUid]);
 
   useEffect(() => {
     if (!targetUid) return;
