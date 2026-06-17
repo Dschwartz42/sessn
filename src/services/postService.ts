@@ -182,6 +182,8 @@ export async function saveWorkoutTemplate(uid: string, data: {
   muscleGroups?: string[];
   warmupDescription?: string;
   workoutInstructions?: string;
+  originalAuthorId?: string;
+  originalAuthorUsername?: string;
 }): Promise<void> {
   const workoutData = Object.fromEntries(
     Object.entries({ ...data, createdAt: serverTimestamp() }).filter(([, v]) => v !== undefined),
@@ -212,9 +214,24 @@ export async function isLiked(postId: string, uid: string): Promise<boolean> {
   return snap.exists();
 }
 
-export async function savePost(postId: string, uid: string) {
+export async function savePost(postId: string, uid: string, post?: Post) {
   await setDoc(doc(db, 'users', uid, 'savedPosts', postId), { postId, createdAt: serverTimestamp() });
   await updateDoc(doc(db, 'posts', postId), { saveCount: increment(1) });
+  if (post && post.authorId !== uid && post.exercises && post.exercises.length > 0) {
+    await saveWorkoutTemplate(uid, {
+      name: post.title,
+      workoutTypes: post.workoutTypes,
+      split: post.split,
+      durationMinutes: post.durationMinutes,
+      exercises: post.exercises,
+      ...(post.cardio ? { cardio: post.cardio } : {}),
+      ...(post.muscleGroups?.length ? { muscleGroups: post.muscleGroups } : {}),
+      ...(post.warmupDescription ? { warmupDescription: post.warmupDescription } : {}),
+      ...(post.workoutInstructions ? { workoutInstructions: post.workoutInstructions } : {}),
+      originalAuthorId: post.authorId,
+      originalAuthorUsername: post.authorUsername,
+    });
+  }
 }
 
 export async function unsavePost(postId: string, uid: string) {

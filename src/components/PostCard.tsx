@@ -56,7 +56,7 @@ export default function PostCard({ post, onPress, onUserPress, onDelete, onEdit 
   const handleSave = async () => {
     if (!user) return;
     if (saved) { await unsavePost(post.id, user.uid); setSaved(false); }
-    else { await savePost(post.id, user.uid); setSaved(true); }
+    else { await savePost(post.id, user.uid, post); setSaved(true); }
   };
 
   const handleRepost = async () => {
