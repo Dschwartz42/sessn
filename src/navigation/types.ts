@@ -15,6 +15,7 @@ export type HomeStackParamList = {
   Streak: undefined;
   Notifications: undefined;
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
+  FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
 };
 
 export type CommunityStackParamList = {
@@ -33,6 +34,7 @@ export type SearchStackParamList = {
   ExpandedPost: { postId: string };
   EditPost: { postId: string };
   FollowerList: { uid: string; type: 'followers' | 'following'; username: string };
+  FullLeaderboard: { groupId?: string; type?: string; timeFrame?: string };
 };
 
 export type ProfileStackParamList = {
